@@ -1,0 +1,24 @@
+{
+  "name": "macro-md",
+  "version": "0.1.0",
+  "description": "Compiles markdown with user-defined macros.",
+  "main": "dist/macro-md.js",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mpjovanovich/macro-md.git"
+  },
+  "keywords": [
+    "markdown",
+    "markup",
+    "macro",
+    "html"
+  ],
+  "author": "Michael Jovanovich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mpjovanovich/macro-md/issues"
+  },
+  "homepage": "https://github.com/mpjovanovich/macro-md#readme"
+}
