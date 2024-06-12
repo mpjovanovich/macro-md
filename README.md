@@ -138,7 +138,7 @@ When the parser encounters an opening curly brace for the macro content it will 
 
 - Markdown spec: https://commonmark.org/
 
-- Markdown tester - useful for learning markdown and checking rendering of tokens: https://spec.commonmark.org/dingus/
+- Markdown tester: https://spec.commonmark.org/dingus/
 
 - markedjs package source: https://github.com/markedjs/marked
 
