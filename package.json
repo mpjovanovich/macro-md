@@ -21,7 +21,6 @@
     "url": "https://github.com/mpjovanovich/macro-md/issues"
   },
   "scripts": {
-    "dev": "ts-node src/app.ts",
     "start": "tsc && node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
