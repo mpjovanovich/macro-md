@@ -1,4 +1,5 @@
 import fs from "fs";
+import { marked } from "marked";
 
 const TOP_IDENTIFIER = "TOP";
 const MACRO_IDENTIFIER = "macro_identifier";
@@ -28,11 +29,11 @@ export async function loadMacros(
   return macros;
 }
 
-export function processMarkdown(
+export async function processMarkdown(
   markdownPath: string,
   macros: Map<string, MacroFunction>,
   macroDelimiter: string
-): void {
+): Promise<string> {
   //   MACRO FORMATS:
 
   // Macros are in the form ``identifier(args){content}
@@ -57,8 +58,10 @@ export function processMarkdown(
     "g"
   );
 
-  const result = processMacro(macros, macroRegex, TOP_IDENTIFIER, [markdown]);
-  console.log(result);
+  const result = await processMacro(macros, macroRegex, TOP_IDENTIFIER, [
+    markdown,
+  ]);
+  return result;
 }
 
 /*
@@ -132,12 +135,12 @@ function getMacroContent(
 }
 
 // Recursively process the macro content
-function processMacro(
+async function processMacro(
   macros: Map<string, MacroFunction>,
   macroRegex: RegExp,
   macro: string,
   args: string[]
-): string {
+): Promise<string> {
   let content = args[0];
 
   // See if there is a macro in the content
@@ -161,7 +164,7 @@ function processMacro(
     childArgs.unshift(macroContent);
 
     // TODO: a start/end index approach would be more efficient
-    const processedContent = processMacro(
+    const processedContent = await processMacro(
       macros,
       macroRegex,
       childMacro,
@@ -170,6 +173,17 @@ function processMacro(
 
     content = content.replace(match[0] + macroContent + "}", processedContent);
   }
+
+  // debug
+  console.log("pre-compiled:" + content);
+
+  // Compile the content
+  content = await marked.parse(content);
+
+  // debug
+  console.log("post-compiled:" + content);
+
+  console.log("_".repeat(40));
 
   if (macro !== TOP_IDENTIFIER) {
     const macroFunction = macros.get(macro);

@@ -5,8 +5,9 @@ const macros = await loadMacros(
 );
 
 // Will be in its own file later, but for now process here
-processMarkdown(
+const result = await processMarkdown(
   "/home/mpjovanovich/git/macro-md/sandbox/test2.md",
   macros,
   "^"
 );
+// console.log(result);

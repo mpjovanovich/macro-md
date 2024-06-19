@@ -2,6 +2,6 @@
 
 This file has some _markdown_ content.
 
-^cap{I ^wrap(&){was} echoed.}
+^cap{I ^cap{was} echoed.}
 
 And some **more** _markdown_ content.

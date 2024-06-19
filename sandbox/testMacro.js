@@ -1,10 +1,28 @@
+import { parseFragment, serialize } from "parse5";
+
 // Has no identifier property, so should be ignored.
 function ignoredFunction() {
   console.log("ignoredFunction");
 }
 
 function cap(content) {
-  return content.toUpperCase();
+  const html = parseFragment(content);
+
+  // debug
+  //   console.log(content);
+  //   console.log(html);
+
+  // Modify the text nodes for all the elements recursively.
+  function modifyTextNodes(node) {
+    if (node.nodeName === "#text") {
+      node.value = node.value.toUpperCase();
+    } else {
+      node.childNodes.forEach((childNode) => modifyTextNodes(childNode));
+    }
+  }
+  modifyTextNodes(html);
+
+  return serialize(html);
 }
 cap.macro_identifier = "cap";
 
