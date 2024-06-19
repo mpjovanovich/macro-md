@@ -3,10 +3,15 @@ function ignoredFunction() {
   console.log("ignoredFunction");
 }
 
-function echo(content) {
-  return content;
+function cap(content) {
+  return content.toUpperCase();
 }
-echo.macro_identifier = "echo";
+cap.macro_identifier = "cap";
+
+function wrap(content, wrapperChar) {
+  return wrapperChar + content + wrapperChar;
+}
+wrap.macro_identifier = "wrap";
 
 testNoArguments.macro_identifier = "testNoArguments";
 // Basic test function with no arguments (except expected content argument).
@@ -36,7 +41,8 @@ testWithArguments.macro_identifier = "testWithArguments";
 
 export {
   ignoredFunction,
-  echo,
+  cap,
+  wrap,
   testNoArguments,
   testWithArgument,
   testWithArguments,

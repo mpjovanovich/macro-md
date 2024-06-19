@@ -53,12 +53,11 @@ export function processMarkdown(
   const markdown = fs.readFileSync(markdownPath, "utf8");
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
   const macroRegex = new RegExp(
-    // `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{(.*?)\\}`,
     `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
     "g"
   );
 
-  const result = processMacro(macros, macroRegex, markdown, TOP_IDENTIFIER, []);
+  const result = processMacro(macros, macroRegex, TOP_IDENTIFIER, [markdown]);
   console.log(result);
 }
 
@@ -136,10 +135,11 @@ function getMacroContent(
 function processMacro(
   macros: Map<string, MacroFunction>,
   macroRegex: RegExp,
-  content: string,
   macro: string,
   args: string[]
 ): string {
+  let content = args[0];
+
   // See if there is a macro in the content
   // If so, we need to replace the macro with the result of the macro.
   const match = macroRegex.exec(content);
@@ -164,16 +164,18 @@ function processMacro(
     const processedContent = processMacro(
       macros,
       macroRegex,
-      macroContent,
       childMacro,
       childArgs
     );
+
     content = content.replace(match[0] + macroContent + "}", processedContent);
   }
 
   if (macro !== TOP_IDENTIFIER) {
     const macroFunction = macros.get(macro);
     if (macroFunction) {
+      // content may have been updated by a nested macro, so update args
+      args[0] = content;
       content = macroFunction.apply(null, args);
     }
   }
