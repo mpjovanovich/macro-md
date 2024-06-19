@@ -32,24 +32,51 @@ export async function loadMacros(
     throw new Error(`Markdown file does not exist: ${markdownPath}`);
   }
 
-  //  TODO: Extract to function and make recursive.
-
-  //   Macro Formats:
-
-  //   - ``mac{ = macro with no args
-  //   - ``mac(a,b){ = macro with args
-  //   - ``mac(*a){ = macro with indefinite array argument
-  //   - ``mac1 mac2(80){ = Text between the macro delimiter and the opening curly brace is treated as a space delineated list of macro calls on the following content to be applied in left to right order.
+  //   MACRO FORMATS:
 
   // Macros are in the form ``identifier(args){content}
+  //   ``mac{...} = macro with no args
+  //   ``mac(a,b){...} = macro with args
+  //   ``mac(*a){...} = macro with indefinite array argument
+  //   ``mac1 mac2(80){...} = multiple macros for the same content
+
+  // Text between the macro delimiter and the opening curly brace is treated as
+  // a space delineated list of macro calls on the following content to be
+  // applied in left to right order.
+
   // Search for macros in the markdown file
   const markdown = fs.readFileSync(markdownPath, "utf8");
-  const macroRegex = new RegExp(`${MACRO_DELIMITER}(.*?)\\{(.*?)\\}`, "g");
+  const macroRegex = new RegExp(
+    `${MACRO_DELIMITER}(\\S+?)(?:\\((.*?)\\))?\\{(.*?)\\}`,
+    "g"
+  );
   let match;
+
   while ((match = macroRegex.exec(markdown)) !== null) {
     const identifier = match[1];
-    const content = match[2];
-    console.log(`${identifier}: ${content}`);
+    const argsList = match[2];
+    const content = match[3];
+
+    // // debug
+    // console.log(`identifier: ${identifier}`);
+    // console.log(`args: ${args}`);
+    // console.log(`content: ${content}`);
+    // console.log();
+
+    // Parse optional arguments if they exist
+    let args = argsList ? argsList.split(",") : [];
+    args = args.map((arg) => arg.trim());
+
+    // The first argument will always be the macro content, so add it to the
+    // front of the args array.
+    args.unshift(content);
+
+    // debug - run the macro
+    const macro = functionMap.get(identifier);
+    if (macro) {
+      // Execute the macro function
+      macro.apply(null, args);
+    }
   }
 
   /*
