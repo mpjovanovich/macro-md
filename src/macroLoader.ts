@@ -1,9 +1,9 @@
 import fs from "fs";
 import { marked } from "marked";
 
-const TOP_IDENTIFIER = "TOP";
 const MACRO_IDENTIFIER = "macro_identifier";
 type MacroFunction = (...args: string[]) => string;
+type MacroCall = { macro: MacroFunction; args: string[] };
 
 /*
  * PUBLIC FUNCTIONS
@@ -46,27 +46,79 @@ export async function processMarkdown(
   // a space delineated list of macro calls on the following content to be
   // applied in left to right order.
 
-  if (!fs.existsSync(markdownPath)) {
-    throw new Error(`Markdown file does not exist: ${markdownPath}`);
-  }
-
   // Search for macros in the markdown file
-  const markdown = fs.readFileSync(markdownPath, "utf8");
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
   const macroRegex = new RegExp(
     `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
     "g"
   );
 
-  const result = await processMacro(macros, macroRegex, TOP_IDENTIFIER, [
-    markdown,
-  ]);
-  return result;
+  let markdown = fs.readFileSync(markdownPath, "utf8");
+  let placeholders = new Map<string, MacroCall>();
+  if (!fs.existsSync(markdownPath)) {
+    throw new Error(`Markdown file does not exist: ${markdownPath}`);
+  }
+
+  const guid = `macro_md_${Date.now().toString()}`;
+  markdown = preProcessTokens(markdown, macroRegex, macros, placeholders, guid);
+  markdown = await marked.parse(markdown);
+  markdown = processMacro(markdown, guid, placeholders);
+
+  return markdown;
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
+
+function preProcessTokens(
+  markdown: string,
+  macroRegex: RegExp,
+  macros: Map<string, MacroFunction>,
+  placeholders: Map<string, MacroCall>,
+  macroGuid: string,
+  macroIndex: number = 0
+): string {
+  const match = macroRegex.exec(markdown);
+  if (match) {
+    // Make sure that the macro was defined by the user.
+    const macro = match[1];
+    const argsList = match[2];
+
+    const macroFunction = macros.get(macro);
+    if (!macroFunction) {
+      throw new Error(`Macro not found: ${macro}`);
+    }
+    const macroContent = getMacroContent(markdown, macroRegex, match);
+
+    let childArgs = argsList ? argsList.split(",") : [];
+    childArgs = childArgs.map((arg) => arg.trim());
+
+    const macroPlaceholder = `${macroGuid}_${macroIndex}`;
+    placeholders.set(macroPlaceholder, {
+      macro: macroFunction,
+      args: childArgs,
+    });
+    macroIndex++;
+
+    const innerMarkdown = preProcessTokens(
+      macroContent,
+      macroRegex,
+      macros,
+      placeholders,
+      macroGuid,
+      macroIndex
+    );
+
+    // Replace the macro with a placeholder
+    markdown = markdown.replace(
+      match[0] + macroContent + "}",
+      macroPlaceholder + innerMarkdown + macroPlaceholder
+    );
+  }
+
+  return markdown;
+}
 
 function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -134,65 +186,50 @@ function getMacroContent(
   return macroContent;
 }
 
-// Recursively process the macro content
-async function processMacro(
-  macros: Map<string, MacroFunction>,
-  macroRegex: RegExp,
-  macro: string,
-  args: string[]
-): Promise<string> {
-  let content = args[0];
+function processMacro(
+  markdown: string,
+  macroGuid: string,
+  placeholders: Map<string, MacroCall>,
+  placeholder?: string
+): string {
+  let processedMarkdown = markdown;
 
-  // See if there is a macro in the content
-  // If so, we need to replace the macro with the result of the macro.
-  const match = macroRegex.exec(content);
+  // Check for child placeholders
+  const placeholderRegex = new RegExp(`${macroGuid}_\\d+`, "g");
+  const match = placeholderRegex.exec(markdown);
+
   if (match) {
-    // Make sure that the macro was defined by the user.
-    const childMacro = match[1];
-    const argsList = match[2];
-
-    if (!macros.has(childMacro)) {
-      throw new Error(`Macro not found: ${childMacro}`);
-    }
-    const macroContent = getMacroContent(content, macroRegex, match);
-
-    let childArgs = argsList ? argsList.split(",") : [];
-    childArgs = childArgs.map((arg) => arg.trim());
-
-    // The first argument will always be the macro content, so add it to the
-    // front of the args array.
-    childArgs.unshift(macroContent);
-
-    // TODO: a start/end index approach would be more efficient
-    const processedContent = await processMacro(
-      macros,
-      macroRegex,
-      childMacro,
-      childArgs
+    const childPlaceholder = match[0];
+    const childStart = markdown.indexOf(childPlaceholder);
+    const childEnd = markdown.indexOf(childPlaceholder, childStart + 1);
+    const childContent = markdown.substring(
+      childStart + childPlaceholder.length,
+      childEnd
     );
 
-    content = content.replace(match[0] + macroContent + "}", processedContent);
+    // Recursively process the next placeholder
+    processedMarkdown = processMacro(
+      childContent,
+      macroGuid,
+      placeholders,
+      childPlaceholder
+    );
+
+    markdown = markdown.replace(
+      childPlaceholder + childContent + childPlaceholder,
+      processedMarkdown
+    );
   }
 
-  // debug
-  console.log("pre-compiled:" + content);
-
-  // Compile the content
-  content = await marked.parse(content);
-
-  // debug
-  console.log("post-compiled:" + content);
-
-  console.log("_".repeat(40));
-
-  if (macro !== TOP_IDENTIFIER) {
-    const macroFunction = macros.get(macro);
+  if (placeholder) {
+    const macroFunction = placeholders.get(placeholder);
     if (macroFunction) {
-      // content may have been updated by a nested macro, so update args
-      args[0] = content;
-      content = macroFunction.apply(null, args);
+      // It is assumed that the first argument is the content of the macro for
+      // all user defined macros.
+      macroFunction.args.unshift(markdown);
+      markdown = macroFunction.macro.apply(null, macroFunction.args);
     }
   }
 
-  return content;
+  return markdown;
 }

@@ -10,4 +10,4 @@ const result = await processMarkdown(
   macros,
   "^"
 );
-// console.log(result);
+console.log(result);

@@ -6,23 +6,20 @@ function ignoredFunction() {
 }
 
 function cap(content) {
-  const html = parseFragment(content);
+  //   const html = parseFragment(content);
 
-  // debug
-  //   console.log(content);
-  //   console.log(html);
+  //   // Modify the text nodes for all the elements recursively.
+  //   function modifyTextNodes(node) {
+  //     if (node.nodeName === "#text") {
+  //       node.value = node.value.toUpperCase();
+  //     } else {
+  //       node.childNodes.forEach((childNode) => modifyTextNodes(childNode));
+  //     }
+  //   }
+  //   modifyTextNodes(html);
 
-  // Modify the text nodes for all the elements recursively.
-  function modifyTextNodes(node) {
-    if (node.nodeName === "#text") {
-      node.value = node.value.toUpperCase();
-    } else {
-      node.childNodes.forEach((childNode) => modifyTextNodes(childNode));
-    }
-  }
-  modifyTextNodes(html);
-
-  return serialize(html);
+  //   return serialize(html);
+  return content.toUpperCase();
 }
 cap.macro_identifier = "cap";
 
