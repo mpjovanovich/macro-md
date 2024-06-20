@@ -21,11 +21,17 @@
     "url": "https://github.com/mpjovanovich/macro-md/issues"
   },
   "scripts": {
-    "start": "tsc && node dist/index.js",
-    "test": "tsc && node dist/test.js"
+    "build": "tsc --project tsconfig.json",
+    "start": "npm run build && node dist/index.js",
+    "test": "mocha --config .mocharc.json --project tsconfig.test.json",
+    "quicktest": "npm run build && node dist/test.js"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.14.2",
+    "chai": "^5.1.1",
+    "mocha": "^10.4.0",
     "parse5": "^7.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"

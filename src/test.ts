@@ -1,9 +1,9 @@
 import { parse } from "./macroLoader.js";
 
-// Will be in its own file later, but for now process here
+// This is a sandbox file to test the macroLoader. It is not part of the main project.
 const result = await parse(
-  "/home/mpjovanovich/git/macro-md/sandbox/test2.md",
-  "/home/mpjovanovich/git/macro-md/sandbox/testMacro.js",
+  "/home/mpjovanovich/git/macro-md/test/markdown/test.md",
+  "/home/mpjovanovich/git/macro-md/test/macro/testMacro.js",
   "^"
 );
 console.log(result);
