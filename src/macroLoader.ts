@@ -5,33 +5,16 @@ const MACRO_IDENTIFIER = "macro_identifier";
 type MacroFunction = (...args: string[]) => string;
 type MacroCall = { macro: MacroFunction; args: string[] };
 
-/*
+/* ************************************************************************
  * PUBLIC FUNCTIONS
+ * ***********************************************************************/
+
+/**
+ * This function is the public entry point to process a markdown file.
  */
-
-export async function loadMacros(
-  macrosPath: string
-): Promise<Map<string, MacroFunction>> {
-  const userMacros = await import(macrosPath);
-  const macros = new Map<string, MacroFunction>();
-
-  if (!fs.existsSync(macrosPath)) {
-    throw new Error(`Macro file does not exist: ${macrosPath}`);
-  }
-
-  for (const key in userMacros) {
-    const macro = userMacros[key];
-    if (typeof macro === "function" && MACRO_IDENTIFIER in macro) {
-      macros.set(macro.macro_identifier, macro);
-    }
-  }
-
-  return macros;
-}
-
-export async function processMarkdown(
+export async function parse(
   markdownPath: string,
-  macros: Map<string, MacroFunction>,
+  macroPath: string,
   macroDelimiter: string
 ): Promise<string> {
   //   MACRO FORMATS:
@@ -46,32 +29,47 @@ export async function processMarkdown(
   // a space delineated list of macro calls on the following content to be
   // applied in left to right order.
 
-  // Search for macros in the markdown file
+  // Load the user defined macros.
+  if (!fs.existsSync(macroPath)) {
+    throw new Error(`Macro file does not exist: ${macroPath}`);
+  }
+  const macros = await loadMacros(macroPath);
+
+  // Load the original markdown file.
+  if (!fs.existsSync(markdownPath)) {
+    throw new Error(`Markdown file does not exist: ${markdownPath}`);
+  }
+  let markdown = fs.readFileSync(markdownPath, "utf8");
+
+  let placeholders = new Map<string, MacroCall>();
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
   const macroRegex = new RegExp(
     `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
     "g"
   );
-
-  let markdown = fs.readFileSync(markdownPath, "utf8");
-  let placeholders = new Map<string, MacroCall>();
-  if (!fs.existsSync(markdownPath)) {
-    throw new Error(`Markdown file does not exist: ${markdownPath}`);
-  }
-
   const guid = `macro_md_${Date.now().toString()}`;
-  markdown = preProcessTokens(markdown, macroRegex, macros, placeholders, guid);
+
+  // Process the markdown and macros.
+  markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
+  markdown = separateBlockTokens(markdown, guid);
   markdown = await marked.parse(markdown);
+  markdown = removeBlockTokenWrappers(markdown, guid);
   markdown = processMacro(markdown, guid, placeholders);
 
   return markdown;
 }
 
-/*
+/* ************************************************************************
  * PRIVATE FUNCTIONS
- */
+ * ***********************************************************************/
 
-function preProcessTokens(
+/**
+ * This function replaces the user defined macro identifiers, arguments, and
+ * curly braces with placeholders tokens based on the provided macroGuid. The
+ * placeholders are stored in the placeholders map, along with the macro
+ * function and arguments that they reference.
+ */
+function embedTokens(
   markdown: string,
   macroRegex: RegExp,
   macros: Map<string, MacroFunction>,
@@ -101,7 +99,7 @@ function preProcessTokens(
     });
     macroIndex++;
 
-    const innerMarkdown = preProcessTokens(
+    const innerMarkdown = embedTokens(
       macroContent,
       macroRegex,
       macros,
@@ -120,10 +118,20 @@ function preProcessTokens(
   return markdown;
 }
 
+/**
+ * This function escapes any characters that have special meaning in a regular
+ * expression.  It's needed because the user provides the macro delimiter, which
+ * ends up in the regex.
+ */
 function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/**
+ * This function extracts the content of a macro from the markdown - the part
+ * that's inside of the curly braces. It will match the correct ending curly
+ * brace in the case of nested macros.
+ */
 function getMacroContent(
   content: string,
   macroRegex: RegExp,
@@ -186,6 +194,29 @@ function getMacroContent(
   return macroContent;
 }
 
+/**
+ * This function loads the user defined macros from the provided file path.
+ */
+async function loadMacros(
+  macrosPath: string
+): Promise<Map<string, MacroFunction>> {
+  const userMacros = await import(macrosPath);
+  const macros = new Map<string, MacroFunction>();
+
+  for (const key in userMacros) {
+    const macro = userMacros[key];
+    if (typeof macro === "function" && MACRO_IDENTIFIER in macro) {
+      macros.set(macro.macro_identifier, macro);
+    }
+  }
+
+  return macros;
+}
+
+/**
+ * This function takes the pre-processed markdown and runs any embedded user
+ * defined macros.
+ */
 function processMacro(
   markdown: string,
   macroGuid: string,
@@ -232,4 +263,99 @@ function processMacro(
   }
 
   return markdown;
+}
+
+/**
+ * This function strips the <p> and </p> tags from the block level tokens.
+ */
+function removeBlockTokenWrappers(markdown: string, macroGuid: string) {
+  const blockTokenRegex = new RegExp(`<p>${macroGuid}_\\d+<\/p>`, "g");
+  const blockTokens = markdown.match(blockTokenRegex);
+
+  if (blockTokens) {
+    blockTokens.forEach((token) => {
+      // Remove the <p> and </p> tags
+      const tokenContent = token.substring(3, token.length - 4);
+      markdown = markdown.replace(token, tokenContent);
+    });
+  }
+
+  return markdown;
+}
+
+/**
+ * This function isolates the block level tokens from the inline content by
+ * placing them on their own lines. They'll end up as <p> tags in the final
+ * HTML, which will be stripped out later.
+ */
+function separateBlockTokens(markdown: string, macroGuid: string): string {
+  const placeholderRegex = new RegExp(`${macroGuid}_\\d+`, "g");
+
+  // Remove all carriage returns and split the markdown into lines.
+  let lines = markdown
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((line) => line.trim());
+
+  // Prepend any macros that are at the beginning of a line to the previous line.
+  for (let i = 0; i < lines.length; i++) {
+    let matchFound: boolean | undefined;
+    while (matchFound !== false) {
+      // Reset the RegEx index and look for the next placeholder
+      placeholderRegex.lastIndex = 0;
+      matchFound = false;
+      const match = placeholderRegex.exec(lines[i]);
+
+      // If a match was found, and it's the first thing on the line, and the line is not the match itself...
+      if (match && match.index === 0 && lines[i] !== match[0]) {
+        matchFound = true;
+
+        // Prepend match to the previous line
+        if (i === 0) {
+          lines.unshift("");
+          lines.unshift(match[0]);
+        } else {
+          lines.splice(i, 0, "");
+          lines.splice(i, 0, match[0]);
+        }
+
+        i += 2;
+        lines[i] = lines[i].replace(match[0], "");
+      }
+    }
+  }
+
+  // Append any macros that are at the end of a line to the next line.
+  for (let i = 0; i < lines.length; i++) {
+    let matchFound: boolean | undefined;
+    while (matchFound !== false) {
+      // Reset the RegEx index and look for the next placeholder
+      placeholderRegex.lastIndex = 0;
+      matchFound = false;
+
+      // Get the last occurance of the placeholder in the line.
+      let lastIndex = lines[i].lastIndexOf(macroGuid);
+      if (lastIndex > 0) {
+        const match = placeholderRegex.exec(lines[i].substring(lastIndex));
+
+        // If a match was found and it's the last thing on the line...
+        if (match && lines[i].substring(lastIndex + match[0].length) === "") {
+          matchFound = true;
+
+          // Append match to the next line
+          if (i === lines.length - 1) {
+            lines.push("");
+            lines.push(match[0]);
+          } else {
+            lines.splice(i + 1, 0, match[0]);
+            lines.splice(i + 1, 0, "");
+          }
+
+          lines[i] = lines[i].substring(0, lastIndex);
+        }
+      }
+    }
+  }
+
+  return lines.join("\n");
 }
