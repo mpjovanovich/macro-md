@@ -12,7 +12,7 @@ import sinon from "sinon";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TEST_MARKDOWN_FILE = path.join(__dirname, "./tmp/test_md.md");
+const TEST_MARKDOWN_FILE = "markdown.md";
 const TEST_MACRO_FILE = path.join(__dirname, "./macro/testMacro.js");
 
 /* **************************************************

@@ -2,6 +2,6 @@
 
 This file has some _markdown_ content.
 
-^cap{I ^wrap($){was} echoed.}
+START ^testNoArgumentsNoContent{I ^testWithArgument($){was} echoed.} END
 
 And some **more** _markdown_ content.
