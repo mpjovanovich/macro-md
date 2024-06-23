@@ -9,14 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const TEST_MARKDOWN_FILE = path.join(__dirname, "./tmp/test_md.md");
-const TEST_MACRO_FILE = path.join(__dirname, "./tmp/test_macro.js");
-
-const MACRO_TEMPLATE = `function test() {
-  return "Parsed macro content";
-}
-test.macro_identifier = "test";
-export default test;
-`;
+const TEST_MACRO_FILE = path.join(__dirname, "./macro/testMacro.js");
 
 /* **************************************************
  * HELPERS
@@ -30,33 +23,27 @@ function createTestMarkdownFile(content: string): void {
   }
 }
 
-function createTestMacroFile(content: string): void {
-  try {
-    fs.writeFileSync(TEST_MACRO_FILE, content);
-  } catch (error) {
-    let message = error instanceof Error ? error.message : error;
-    throw new Error(`Failed to create macro file: ${message}`);
-  }
-}
-
 /* **************************************************
  * TESTS
  ************************************************** */
 describe("Macro Loader", () => {
+  var markdown = `start end`;
+  var expected = "<p>start end</p>\n";
+
   it("produces basic markdown - no macros", async () => {
-    // Create test files
-    createTestMarkdownFile("Content");
-    createTestMacroFile(MACRO_TEMPLATE);
-
-    // Parse markdown file
+    createTestMarkdownFile(markdown);
     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
-
-    // Assert
-    const expected = "<p>Content</p>\n";
     expect(result).to.equal(expected);
   });
 
-  // More "it" tests will go here.
+  markdown = `start ^testNoArgumentNoContent{} end`;
+  expected = "<p>start testNoArgumentNoContent end</p>\n";
+
+  it("inline macro, no arguments, no content", async () => {
+    createTestMarkdownFile(markdown);
+    const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
+    expect(result).to.equal(expected);
+  });
 });
 
 /* TODO:
