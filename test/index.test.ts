@@ -18,7 +18,7 @@ const TEST_MACRO_FILE = path.join(__dirname, "./macro/testMacro.js");
 /* **************************************************
  * TESTS
  ************************************************** */
-describe("Macro Loader", () => {
+describe("INTEGRATION TEST - FULL MACRO PARSE", () => {
   let existsSyncStub: sinon.SinonStub;
   let readFileSyncStub: sinon.SinonStub;
 
@@ -44,6 +44,16 @@ describe("Macro Loader", () => {
       markdown: "start ^testNoArgumentsNoContent{} end",
       expected: "<p>start testNoArgumentsNoContent end</p>\n",
     },
+    {
+      description: "inline macro, no arguments, content",
+      markdown: "start ^testNoArguments{content} end",
+      expected: "<p>start testNoArguments content end</p>\n",
+    },
+    {
+      description: "inline macro, argument, no spacing",
+      markdown: "start ^testWithArgument(arg1){content} end",
+      expected: "<p>start testWithArgument content arg1 end</p>\n",
+    },
   ];
 
   testCases.forEach(({ description, markdown, expected }) => {
@@ -53,44 +63,6 @@ describe("Macro Loader", () => {
       expect(result).to.equal(expected);
     });
   });
-
-  //   it("produces basic markdown - no macros", async () => {
-  //     const markdown = `start end`;
-  //     const expected = "<p>start end</p>\n";
-  //     readFileSyncStub.withArgs("markdown.md").returns(markdown);
-  //     const result = await parse("markdown.md", TEST_MACRO_FILE, "^");
-  //     expect(result).to.equal(expected);
-  //   });
-
-  //   it("inline macro, no arguments, no content", async () => {
-  //     const markdown = `start ^testNoArgumentsNoContent{} end`;
-  //     const expected = "<p>start testNoArgumentsNoContent end</p>\n";
-  //     readFileSyncStub.withArgs("markdown.md").returns(markdown);
-  //     const result = await parse("markdown.md", TEST_MACRO_FILE, "^");
-  //     expect(result).to.equal(expected);
-  //   });
-
-  //   it("inline macro, no arguments, no content", async () => {
-  //     markdown = `start ^testNoArgumentsNoContent{} end`;
-  //     expected = "<p>start testNoArgumentsNoContent end</p>\n";
-  //     createTestMarkdownFile(markdown);
-  //     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
-  //     expect(result).to.equal(expected);
-  //   });
-  //   it("inline macro, no arguments, content", async () => {
-  //     markdown = `start ^testNoArguments{content} end`;
-  //     expected = "<p>start testNoArguments content end</p>\n";
-  //     createTestMarkdownFile(markdown);
-  //     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
-  //     expect(result).to.equal(expected);
-  //   });
-  //   it("inline macro, argument, no spacing", async () => {
-  //     markdown = `start ^testWithArgument(arg){content} end`;
-  //     expected = "<p>start testWithArgument content arg end</p>\n";
-  //     createTestMarkdownFile(markdown);
-  //     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
-  //     expect(result).to.equal(expected);
-  //   });
 });
 
 /* TODO:

@@ -1,9 +1,9 @@
 import fs from "fs";
 import { marked } from "marked";
 
-const MACRO_IDENTIFIER = "macroIdentifier";
-type MacroFunction = (...args: string[]) => string;
-type MacroCall = { macro: MacroFunction; args: string[] };
+export const MACRO_IDENTIFIER = "macroIdentifier";
+export type MacroFunction = (...args: string[]) => string;
+export type MacroCall = { macro: MacroFunction; args: string[] };
 
 /* ************************************************************************
  * PUBLIC FUNCTIONS
@@ -29,17 +29,9 @@ export async function parse(
   // a space delineated list of macro calls on the following content to be
   // applied in left to right order.
 
-  // Load the user defined macros.
-  if (!fs.existsSync(macroPath)) {
-    throw new Error(`Macro file does not exist: ${macroPath}`);
-  }
+  // Load the user defined macros and markdown.
   const macros = await loadMacros(macroPath);
-
-  // Load the original markdown file.
-  if (!fs.existsSync(markdownPath)) {
-    throw new Error(`Markdown file does not exist: ${markdownPath}`);
-  }
-  let markdown = fs.readFileSync(markdownPath, "utf8");
+  let markdown = loadMarkdown(markdownPath);
 
   let placeholders = new Map<string, MacroCall>();
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
@@ -60,7 +52,7 @@ export async function parse(
 }
 
 /* ************************************************************************
- * PRIVATE FUNCTIONS
+ * PRIVATE FUNCTIONS - exposed for testing
  * ***********************************************************************/
 
 /**
@@ -69,7 +61,7 @@ export async function parse(
  * placeholders are stored in the placeholders map, along with the macro
  * function and arguments that they reference.
  */
-function embedTokens(
+export function embedTokens(
   markdown: string,
   macroRegex: RegExp,
   macros: Map<string, MacroFunction>,
@@ -123,7 +115,7 @@ function embedTokens(
  * expression.  It's needed because the user provides the macro delimiter, which
  * ends up in the regex.
  */
-function escapeRegExp(string: string) {
+export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
@@ -132,7 +124,7 @@ function escapeRegExp(string: string) {
  * that's inside of the curly braces. It will match the correct ending curly
  * brace in the case of nested macros.
  */
-function getMacroContent(
+export function getMacroContent(
   content: string,
   macroRegex: RegExp,
   match: RegExpExecArray
@@ -197,11 +189,15 @@ function getMacroContent(
 /**
  * This function loads the user defined macros from the provided file path.
  */
-async function loadMacros(
-  macrosPath: string
+export async function loadMacros(
+  macroPath: string
 ): Promise<Map<string, MacroFunction>> {
-  const userMacros = await import(macrosPath);
+  const userMacros = await import(macroPath);
   const macros = new Map<string, MacroFunction>();
+
+  if (!fs.existsSync(macroPath)) {
+    throw new Error(`Macro file does not exist: ${macroPath}`);
+  }
 
   for (const key in userMacros) {
     const macro = userMacros[key];
@@ -214,10 +210,21 @@ async function loadMacros(
 }
 
 /**
+ * This function returns the raw markdown from the provided file path.
+ */
+export function loadMarkdown(markdownPath: string): string {
+  // Load the original markdown file.
+  if (!fs.existsSync(markdownPath)) {
+    throw new Error(`Markdown file does not exist: ${markdownPath}`);
+  }
+  return fs.readFileSync(markdownPath, "utf8");
+}
+
+/**
  * This function takes the pre-processed markdown and runs any embedded user
  * defined macros.
  */
-function processMacro(
+export function processMacro(
   markdown: string,
   macroGuid: string,
   placeholders: Map<string, MacroCall>,
@@ -268,7 +275,7 @@ function processMacro(
 /**
  * This function strips the <p> and </p> tags from the block level tokens.
  */
-function removeBlockTokenWrappers(markdown: string, macroGuid: string) {
+export function removeBlockTokenWrappers(markdown: string, macroGuid: string) {
   const blockTokenRegex = new RegExp(`<p>${macroGuid}_\\d+<\/p>`, "g");
   const blockTokens = markdown.match(blockTokenRegex);
 
@@ -288,7 +295,10 @@ function removeBlockTokenWrappers(markdown: string, macroGuid: string) {
  * placing them on their own lines. They'll end up as <p> tags in the final
  * HTML, which will be stripped out later.
  */
-function separateBlockTokens(markdown: string, macroGuid: string): string {
+export function separateBlockTokens(
+  markdown: string,
+  macroGuid: string
+): string {
   const placeholderRegex = new RegExp(`${macroGuid}_\\d+`, "g");
 
   // Remove all carriage returns and split the markdown into lines.
