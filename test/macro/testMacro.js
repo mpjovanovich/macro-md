@@ -4,7 +4,7 @@ function testNoArgumentsNoContent(content) {
 testNoArgumentsNoContent.macroIdentifier = "testNoArgumentsNoContent";
 
 function testNoArguments(content) {
-  return `testNoArgumentsNoContent ${content}`;
+  return `testNoArguments ${content}`;
 }
 testNoArguments.macroIdentifier = "testNoArguments";
 
