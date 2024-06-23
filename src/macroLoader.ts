@@ -1,7 +1,7 @@
 import fs from "fs";
 import { marked } from "marked";
 
-const MACRO_IDENTIFIER = "macro_identifier";
+const MACRO_IDENTIFIER = "macroIdentifier";
 type MacroFunction = (...args: string[]) => string;
 type MacroCall = { macro: MacroFunction; args: string[] };
 
@@ -206,7 +206,7 @@ async function loadMacros(
   for (const key in userMacros) {
     const macro = userMacros[key];
     if (typeof macro === "function" && MACRO_IDENTIFIER in macro) {
-      macros.set(macro.macro_identifier, macro);
+      macros.set(macro.macroIdentifier, macro);
     }
   }
 
