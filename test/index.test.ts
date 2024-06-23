@@ -22,42 +22,61 @@ function createTestMarkdownFile(content: string): void {
     throw new Error(`Failed to create markdown file: ${message}`);
   }
 }
+function deleteTestMarkdownFile(): void {
+  try {
+    fs.unlinkSync(TEST_MARKDOWN_FILE);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      // If the error code is ENOENT, do nothing. The file does not exist, and that's okay.
+      (error as NodeJS.ErrnoException).code !== "ENOENT"
+    ) {
+      let message = error.message;
+      throw new Error(`Failed to delete markdown file: ${message}`);
+    }
+  }
+}
 
 /* **************************************************
  * TESTS
  ************************************************** */
 describe("Macro Loader", () => {
-  var markdown = `start end`;
-  var expected = "<p>start end</p>\n";
+  let markdown: string;
+  let expected: string;
+
+  beforeEach(() => {
+    markdown = "";
+    expected = "";
+    deleteTestMarkdownFile();
+  });
 
   it("produces basic markdown - no macros", async () => {
+    markdown = `start end`;
+    expected = "<p>start end</p>\n";
     createTestMarkdownFile(markdown);
     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
     expect(result).to.equal(expected);
   });
-
-  markdown = `start ^testNoArgumentsNoContent{} end`;
-  expected = "<p>start testNoArgumentsNoContent end</p>\n";
 
   it("inline macro, no arguments, no content", async () => {
+    markdown = `start ^testNoArgumentsNoContent{} end`;
+    expected = "<p>start testNoArgumentsNoContent end</p>\n";
     createTestMarkdownFile(markdown);
     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
     expect(result).to.equal(expected);
   });
-
-  markdown = `start ^testNoArguments{content} end`;
-  expected = "<p>start testNoArguments content end</p>\n";
 
   it("inline macro, no arguments, content", async () => {
+    markdown = `start ^testNoArguments{content} end`;
+    expected = "<p>start testNoArguments content end</p>\n";
     createTestMarkdownFile(markdown);
     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
     expect(result).to.equal(expected);
   });
 
-  markdown = `start ^testWithArgument(arg){content} end`;
-  expected = "<p>start testWithArgument content arg end</p>\n";
-
   it("inline macro, argument, no spacing", async () => {
+    markdown = `start ^testWithArgument(arg){content} end`;
+    expected = "<p>start testWithArgument content arg end</p>\n";
     createTestMarkdownFile(markdown);
     const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
     expect(result).to.equal(expected);
