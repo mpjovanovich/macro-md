@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs/promises";
 import { marked } from "marked";
 
 export const MACRO_IDENTIFIER = "macroIdentifier";
@@ -31,7 +31,7 @@ export async function parse(
 
   // Load the user defined macros and markdown.
   const macros = await loadMacros(macroPath);
-  let markdown = loadMarkdown(markdownPath);
+  let markdown = await loadMarkdown(markdownPath);
 
   let placeholders = new Map<string, MacroCall>();
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
@@ -54,6 +54,17 @@ export async function parse(
 /* ************************************************************************
  * PRIVATE FUNCTIONS - exposed for testing
  * ***********************************************************************/
+
+/**
+ * Checks if a file exists at the provided path.
+ */
+export async function checkFileExists(filePath: string): Promise<boolean> {
+  const exists = await fs
+    .stat(filePath)
+    .then(() => true)
+    .catch(() => false);
+  return exists;
+}
 
 /**
  * This function replaces the user defined macro identifiers, arguments, and
@@ -115,7 +126,7 @@ export function embedTokens(
  * expression.  It's needed because the user provides the macro delimiter, which
  * ends up in the regex.
  */
-export function escapeRegExp(string: string) {
+export function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
@@ -192,12 +203,12 @@ export function getMacroContent(
 export async function loadMacros(
   macroPath: string
 ): Promise<Map<string, MacroFunction>> {
-  const userMacros = await import(macroPath);
-  const macros = new Map<string, MacroFunction>();
-
-  if (!fs.existsSync(macroPath)) {
+  if (!(await checkFileExists(macroPath))) {
     throw new Error(`Macro file does not exist: ${macroPath}`);
   }
+
+  const userMacros = await import(macroPath);
+  const macros = new Map<string, MacroFunction>();
 
   for (const key in userMacros) {
     const macro = userMacros[key];
@@ -212,12 +223,11 @@ export async function loadMacros(
 /**
  * This function returns the raw markdown from the provided file path.
  */
-export function loadMarkdown(markdownPath: string): string {
-  // Load the original markdown file.
-  if (!fs.existsSync(markdownPath)) {
-    throw new Error(`Markdown file does not exist: ${markdownPath}`);
+export async function loadMarkdown(markdownPath: string): Promise<string> {
+  if (!(await checkFileExists(markdownPath))) {
+    throw new Error(`Macro file does not exist: ${markdownPath}`);
   }
-  return fs.readFileSync(markdownPath, "utf8");
+  return fs.readFile(markdownPath, "utf8");
 }
 
 /**
@@ -275,7 +285,10 @@ export function processMacro(
 /**
  * This function strips the <p> and </p> tags from the block level tokens.
  */
-export function removeBlockTokenWrappers(markdown: string, macroGuid: string) {
+export function removeBlockTokenWrappers(
+  markdown: string,
+  macroGuid: string
+): string {
   const blockTokenRegex = new RegExp(`<p>${macroGuid}_\\d+<\/p>`, "g");
   const blockTokens = markdown.match(blockTokenRegex);
 
