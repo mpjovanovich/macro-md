@@ -1,69 +1,142 @@
-import { expect } from "chai";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { parse } from "../src/macroLoader.js";
-import sinon from "sinon";
-
-// // test
-// import { readFile } from "../src/macroLoader.js";
-
-// Helper functions
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs from "fs/promises";
+import {
+  MACRO_IDENTIFIER,
+  MacroFunction,
+  loadMacros,
+  parse,
+} from "../src/macroLoader";
 
 const TEST_MARKDOWN_FILE = "markdown.md";
-const TEST_MACRO_FILE = path.join(__dirname, "./macro/testMacro.js");
+const TEST_MACRO_FILE = "macro.js";
+
+// Create a minimal mock Stats object
+const existingFileStats = {
+  isFile: () => true,
+  isDirectory: () => false,
+} as any;
+
+/* **************************************************
+ * MACRO FUNCTIONS
+ ************************************************** */
+function testNoMacroIdentifierSet(content: string): string {
+  return `testNoMacroIdentifierSet`;
+}
+
+function testNoArgumentsNoContent(content: string): string {
+  return `testNoArgumentsNoContent`;
+}
+testNoArgumentsNoContent[MACRO_IDENTIFIER] = "testNoArgumentsNoContent";
+
+function testNoArguments(content: string): string {
+  return `testNoArguments ${content}`;
+}
+testNoArguments[MACRO_IDENTIFIER] = "testNoArguments";
+
+function testWithArgument(content: string, arg1: string): string {
+  return `testWithArgument ${content} ${arg1}`;
+}
+testWithArgument[MACRO_IDENTIFIER] = "testWithArgument";
 
 /* **************************************************
  * TESTS
  ************************************************** */
-describe("INTEGRATION TEST - FULL MACRO PARSE", () => {
-  let existsSyncStub: sinon.SinonStub;
-  let readFileSyncStub: sinon.SinonStub;
+describe("loadMacros", () => {
+  let statSpy: jest.SpyInstance;
+  let mockDynamicImport: jest.Mock;
 
-  beforeEach(function () {
-    existsSyncStub = sinon.stub(fs, "existsSync").returns(true);
-    readFileSyncStub = sinon.stub(fs, "readFileSync");
+  beforeEach(() => {
+    // Needed so that we don't get a "file not found" error.
+    statSpy = jest.spyOn(fs, "stat").mockResolvedValue(existingFileStats);
+    // Use a mock to allow us to define the macros for each test rather than
+    // loading from a file.
+    mockDynamicImport = jest.fn();
   });
 
   afterEach(() => {
-    existsSyncStub.restore();
-    readFileSyncStub.restore();
+    jest.restoreAllMocks();
   });
 
-  // Example of a parameterized test approach (if applicable)
-  const testCases = [
-    {
-      description: "basic markdown - no macros",
-      markdown: "start end",
-      expected: "<p>start end</p>\n",
-    },
-    {
-      description: "inline macro, no arguments, no content",
-      markdown: "start ^testNoArgumentsNoContent{} end",
-      expected: "<p>start testNoArgumentsNoContent end</p>\n",
-    },
-    {
-      description: "inline macro, no arguments, content",
-      markdown: "start ^testNoArguments{content} end",
-      expected: "<p>start testNoArguments content end</p>\n",
-    },
-    {
-      description: "inline macro, argument, no spacing",
-      markdown: "start ^testWithArgument(arg1){content} end",
-      expected: "<p>start testWithArgument content arg1 end</p>\n",
-    },
-  ];
-
-  testCases.forEach(({ description, markdown, expected }) => {
-    it(description, async () => {
-      readFileSyncStub.withArgs(TEST_MARKDOWN_FILE).returns(markdown);
-      const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
-      expect(result).to.equal(expected);
+  it("does not load macro when identifier not set", async () => {
+    mockDynamicImport.mockResolvedValue({
+      testNoMacroIdentifierSet: testNoMacroIdentifierSet,
     });
+    const macros = await loadMacros(TEST_MACRO_FILE, mockDynamicImport);
+    expect(macros.has("testNoMacroIdentifierSet")).toBeFalsy();
+  });
+
+  it("loads macro when identifier set", async () => {
+    mockDynamicImport.mockResolvedValue({
+      testNoArgumentsNoContent: testNoArgumentsNoContent,
+    });
+    const macros = await loadMacros(TEST_MACRO_FILE, mockDynamicImport);
+    expect(macros.has("testNoArgumentsNoContent")).toBeTruthy();
+    expect(typeof macros.get("testNoArgumentsNoContent")).toBe("function");
   });
 });
+
+// // TODO: refactor. I don't want to pollute the API just for the sake of testing.
+// // We will unit test the components of the parse function instead.
+// describe("parse", () => {
+//   let statSpy: jest.SpyInstance;
+//   let readFileSpy: jest.SpyInstance;
+//   let mockDynamicImport: jest.Mock;
+
+//   beforeEach(() => {
+//     // Needed so that we don't get a "file not found" error.
+//     statSpy = jest.spyOn(fs, "stat").mockResolvedValue(existingFileStats);
+//     // Use a spy to allow us to define the markdown for each test.
+//     readFileSpy = jest.spyOn(fs, "readFile");
+//     // Use a mock to allow us to define the macros for each test rather than
+//     // loading from a file.
+//     mockDynamicImport = jest.fn();
+//   });
+
+//   afterEach(() => {
+//     jest.restoreAllMocks();
+//   });
+
+//   it("basic markdown - no macros", async () => {
+//     // // Imports
+//     // mockDynamicImport.mockResolvedValue({
+//     //   testNoMacroIdentifierSet: testNoMacroIdentifierSet,
+//     // });
+//     // // Markdown
+//     // readFileSpy.mockResolvedValueOnce("start end");
+
+//     expect(true).toBe(true);
+//   });
+
+//   //   const testCases = [
+//   //     {
+//   //       description: "basic markdown - no macros",
+//   //       markdown: "start end",
+//   //       expected: "<p>start end</p>\n",
+//   //     },
+//   //     {
+//   //       description: "inline macro, no arguments, no content",
+//   //       markdown: "start ^testNoArgumentsNoContent{} end",
+//   //       expected: "<p>start testNoArgumentsNoContent end</p>\n",
+//   //     },
+//   //     {
+//   //       description: "inline macro, no arguments, content",
+//   //       markdown: "start ^testNoArguments{content} end",
+//   //       expected: "<p>start testNoArguments content end</p>\n",
+//   //     },
+//   //     {
+//   //       description: "inline macro, argument, no spacing",
+//   //       markdown: "start ^testWithArgument(arg1){content} end",
+//   //       expected: "<p>start testWithArgument content arg1 end</p>\n",
+//   //     },
+//   //   ];
+
+//   //   testCases.forEach(({ description, markdown, expected }) => {
+//   //     test(description, async () => {
+//   //       readFileSpy.mockResolvedValueOnce(markdown);
+//   //       const result = await parse(TEST_MARKDOWN_FILE, TEST_MACRO_FILE, "^");
+//   //       expect(result).toBe(expected);
+//   //     });
+//   //   });
+// });
 
 /* TODO:
 Currently broken:

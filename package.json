@@ -23,20 +23,18 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "start": "npm run build && node dist/index.js",
-    "test": "mocha --config .mocharc.json --project tsconfig.test.json",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "quicktest": "npm run build && node dist/test.js"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.16",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.2",
-    "@types/sinon": "^17.0.3",
-    "chai": "^5.1.1",
-    "mocha": "^10.4.0",
+    "jest": "^29.7.0",
     "parse5": "^7.1.2",
-    "sinon": "^18.0.0",
+    "proxyrequire": "^1.0.21",
+    "ts-jest": "^29.1.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   },
   "engines": {
     "node": ">=18"
