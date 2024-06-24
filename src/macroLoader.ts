@@ -17,6 +17,14 @@ export async function parse(
   macroPath: string,
   macroDelimiter: string
 ): Promise<string> {
+  const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
+  const macroRegex = new RegExp(
+    `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
+    "g"
+  );
+  const guid = `macro_md_${Date.now().toString()}`;
+  let placeholders = new Map<string, MacroCall>();
+
   //   MACRO FORMATS:
 
   // Macros are in the form ``identifier(args){content}
@@ -32,14 +40,6 @@ export async function parse(
   // Load the user defined macros and markdown.
   const macros = await loadMacros(macroPath, (path) => import(path));
   let markdown = await loadMarkdown(markdownPath);
-
-  let placeholders = new Map<string, MacroCall>();
-  const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
-  const macroRegex = new RegExp(
-    `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
-    "g"
-  );
-  const guid = `macro_md_${Date.now().toString()}`;
 
   // Process the markdown and macros.
   markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
