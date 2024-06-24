@@ -1,1 +1,1 @@
-export { parse } from "./macroLoader.js";
+export { MACRO_IDENTIFIER, parse } from "./macroLoader.js";

@@ -30,7 +30,7 @@ export async function parse(
   // applied in left to right order.
 
   // Load the user defined macros and markdown.
-  const macros = await loadMacros(macroPath);
+  const macros = await loadMacros(macroPath, (path) => import(path));
   let markdown = await loadMarkdown(markdownPath);
 
   let placeholders = new Map<string, MacroCall>();
@@ -201,13 +201,15 @@ export function getMacroContent(
  * This function loads the user defined macros from the provided file path.
  */
 export async function loadMacros(
-  macroPath: string
+  macroPath: string,
+  // Dependency injection so that testing is not a nightmare.
+  importFunction: (path: string) => Promise<any>
 ): Promise<Map<string, MacroFunction>> {
   if (!(await checkFileExists(macroPath))) {
     throw new Error(`Macro file does not exist: ${macroPath}`);
   }
 
-  const userMacros = await import(macroPath);
+  const userMacros = await importFunction(macroPath);
   const macros = new Map<string, MacroFunction>();
 
   for (const key in userMacros) {
