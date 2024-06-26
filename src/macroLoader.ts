@@ -143,6 +143,7 @@ export function embedTokens(
       );
     }
 
+    macroRegex.lastIndex = 0;
     match = macroRegex.exec(markdown);
   }
 
@@ -320,6 +321,7 @@ export function processMacro(
       processedMarkdown
     );
 
+    placeholderRegex.lastIndex = 0;
     match = placeholderRegex.exec(markdown);
   }
 

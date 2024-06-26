@@ -9,7 +9,7 @@ import {
   removeBlockTokenWrappers,
   parse,
 } from "./macroLoader.js";
-import { TokenizerObject, marked } from "marked";
+import { marked } from "marked";
 import fs from "fs";
 
 // This is a sandbox file for debugging. It is not part of the main project.
