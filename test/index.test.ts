@@ -6,6 +6,8 @@ import {
   escapeRegExp,
   embedTokens,
   loadMacros,
+  processMacro,
+  removeBlockTokenWrappers,
   separateBlockTokens,
 } from "../src/macroLoader";
 import { marked } from "marked";
@@ -41,7 +43,7 @@ const testCases = [
     embedded: `start ${GUID}_0${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0${GUID}_0 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0${GUID}_0 end</p>\n`,
     processedOutput: "",
   },
   {
@@ -50,7 +52,7 @@ const testCases = [
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: "",
   },
   {
@@ -66,7 +68,10 @@ ${GUID}_0`,
 <p>content</p>
 <p>${GUID}_0</p>
 `,
-    removedBlock: "",
+    removedBlock: `${GUID}_0
+<p>content</p>
+${GUID}_0
+`,
     processedOutput: "",
   },
   {
@@ -75,7 +80,7 @@ ${GUID}_0`,
     embedded: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end</p>\n`,
     processedOutput: "",
   },
   {
@@ -84,7 +89,7 @@ ${GUID}_0`,
     embedded: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     embeddedBlock: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     parsedMarkdown: `<p>start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end</p>\n`,
     processedOutput: "",
   },
 
@@ -106,7 +111,10 @@ ${GUID}_0`,
 <p>content</p>
 <p>${GUID}_0</p>
 `,
-    removedBlock: "",
+    removedBlock: `${GUID}_0
+<p>content</p>
+${GUID}_0
+`,
     processedOutput: "",
   },
   {
@@ -130,7 +138,10 @@ ${GUID}_0`,
 <p>content</p>
 <p>${GUID}_0</p>
 `,
-    removedBlock: "",
+    removedBlock: `${GUID}_0
+<p>content</p>
+${GUID}_0
+`,
     processedOutput: "",
   },
   {
@@ -165,7 +176,13 @@ ${GUID}_0`,
 <p>${GUID}_1</p>
 <p>${GUID}_0</p>
 `,
-    removedBlock: "",
+    removedBlock: `${GUID}_0
+<p>content</p>
+${GUID}_1
+<p>nested content</p>
+${GUID}_1
+${GUID}_0
+`,
     processedOutput: "",
   },
 
@@ -176,7 +193,7 @@ ${GUID}_0`,
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: "",
   },
   {
@@ -185,7 +202,7 @@ ${GUID}_0`,
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
-    removedBlock: "",
+    removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: "",
   },
 ];
@@ -307,9 +324,6 @@ describe("separateBlockTokens", () => {
 
 describe("parseIntermediateMarkdown", () => {
   testCases.forEach(({ description, embeddedBlock, parsedMarkdown }) => {
-    // Skip tests that aren't complete yet
-    if (!parsedMarkdown) return;
-
     it(description, async () => {
       const result = await marked.parse(embeddedBlock);
       expect(result).toBe(parsedMarkdown);
@@ -317,9 +331,18 @@ describe("parseIntermediateMarkdown", () => {
   });
 });
 
+describe("removeBlockTokenWrappers", () => {
+  testCases.forEach(({ description, parsedMarkdown, removedBlock }) => {
+    // Skip tests that aren't complete yet
+    if (!removedBlock) return;
+
+    it(description, async () => {
+      const result = removeBlockTokenWrappers(parsedMarkdown, GUID);
+    });
+  });
+});
+
 // TO TEST:
-//   markdown = await marked.parse(markdown);
-//   markdown = removeBlockTokenWrappers(markdown, guid);
 //   markdown = processMacro(markdown, guid, placeholders);
 
 /* TODO:
