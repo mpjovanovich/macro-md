@@ -373,7 +373,7 @@ export function separateBlockTokens(
 
           // Append match to the next line
           if (i === lines.length - 1) {
-            // Can't remember why I did this... needed?
+            // We will do the line padding in the next step instead
             // lines.push("");
             lines.push(match[0]);
           } else {
@@ -383,6 +383,24 @@ export function separateBlockTokens(
 
           lines[i] = lines[i].substring(0, lastIndex);
         }
+      }
+    }
+  }
+
+  // Block level tags must be padded with an empty line so that they are
+  // converted to <p> tags when parsed as markdown.
+  for (let i = 0; i < lines.length; i++) {
+    // Add an empty line before each  block token if there isn't one already.
+    if (lines[i].startsWith(macroGuid)) {
+      if (i !== 0 && lines[i - 1] !== "") {
+        lines.splice(i, 0, "");
+        i++;
+      }
+
+      // Add an empty line after each  block token if there isn't one already.
+      if (i !== lines.length - 1 && lines[i + 1] !== "") {
+        lines.splice(i + 1, 0, "");
+        i++;
       }
     }
   }
