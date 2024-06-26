@@ -15,7 +15,7 @@ import { marked } from "marked";
 /*
  * Stub in markdown to test here
  */
-let markdown = "^testNoArgumentsNoContent{content}";
+let markdown = "^testNoArguments{content}";
 
 const macroDelimiter = "^";
 const escapedMacroDelimiter = escapeRegExp(macroDelimiter);

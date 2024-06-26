@@ -8,6 +8,7 @@ import {
   loadMacros,
   separateBlockTokens,
 } from "../src/macroLoader";
+import { marked } from "marked";
 
 /* **************************************************
  * CONSTANTS
@@ -39,7 +40,7 @@ const testCases = [
     markdown: "start ^testNoArgumentsNoContent{} end",
     embedded: `start ${GUID}_0${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0${GUID}_0 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0${GUID}_0 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -48,18 +49,23 @@ const testCases = [
     markdown: "start ^testNoArguments{content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
   {
     description: "macro wrapping single line of content",
-    markdown: "^testNoArgumentsNoContent{content}",
+    markdown: "^testNoArguments{content}",
     embedded: `${GUID}_0content${GUID}_0`,
     embeddedBlock: `${GUID}_0
+
 content
+
 ${GUID}_0`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>${GUID}_0</p>
+<p>content</p>
+<p>${GUID}_0</p>
+`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -68,7 +74,7 @@ ${GUID}_0`,
     markdown: "start ^testNoArguments{^testNoArguments{content}} end",
     embedded: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -77,7 +83,7 @@ ${GUID}_0`,
     markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
     embedded: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     embeddedBlock: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -92,9 +98,14 @@ content
 content
 ${GUID}_0`,
     embeddedBlock: `${GUID}_0
+
 content
+
 ${GUID}_0`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>${GUID}_0</p>
+<p>content</p>
+<p>${GUID}_0</p>
+`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -115,7 +126,10 @@ ${GUID}_0`,
 content
 
 ${GUID}_0`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>${GUID}_0</p>
+<p>content</p>
+<p>${GUID}_0</p>
+`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -134,12 +148,23 @@ nested content
 ${GUID}_1
 ${GUID}_0`,
     embeddedBlock: `${GUID}_0
+
 content
+
 ${GUID}_1
+
 nested content
+
 ${GUID}_1
+
 ${GUID}_0`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>${GUID}_0</p>
+<p>content</p>
+<p>${GUID}_1</p>
+<p>nested content</p>
+<p>${GUID}_1</p>
+<p>${GUID}_0</p>
+`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -150,7 +175,7 @@ ${GUID}_0`,
     markdown: "start ^testWithArgument(arg1){content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -159,7 +184,7 @@ ${GUID}_0`,
     markdown: "start ^testWithArgument (arg1 ) {content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
-    parsedMarkdown: "",
+    parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: "",
     processedOutput: "",
   },
@@ -280,8 +305,19 @@ describe("separateBlockTokens", () => {
   });
 });
 
+describe("parseIntermediateMarkdown", () => {
+  testCases.forEach(({ description, embeddedBlock, parsedMarkdown }) => {
+    // Skip tests that aren't complete yet
+    if (!parsedMarkdown) return;
+
+    it(description, async () => {
+      const result = await marked.parse(embeddedBlock);
+      expect(result).toBe(parsedMarkdown);
+    });
+  });
+});
+
 // TO TEST:
-//   markdown = separateBlockTokens(markdown, guid);
 //   markdown = await marked.parse(markdown);
 //   markdown = removeBlockTokenWrappers(markdown, guid);
 //   markdown = processMacro(markdown, guid, placeholders);
