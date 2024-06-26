@@ -72,7 +72,7 @@ const testCases = [
   {
     description: "multiple inline on same line",
     markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
-    embedded: `start ${GUID}_0first$${GUID}_0 {GUID}_1second${GUID}_1 end`,
+    embedded: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     embeddedBlock: "",
     parsedMarkdown: "",
     removedBlock: "",

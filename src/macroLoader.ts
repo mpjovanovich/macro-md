@@ -80,8 +80,8 @@ export function embedTokens(
   macroGuid: string,
   macroIndex: number = 0
 ): string {
-  const match = macroRegex.exec(markdown);
-  if (match) {
+  let match = macroRegex.exec(markdown);
+  while (match) {
     // Make sure that the macro was defined by the user.
     const macro = match[1];
     const argsList = match[2];
@@ -116,6 +116,8 @@ export function embedTokens(
       match[0] + macroContent + "}",
       macroPlaceholder + innerMarkdown + macroPlaceholder
     );
+
+    match = macroRegex.exec(markdown);
   }
 
   return markdown;

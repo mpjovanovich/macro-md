@@ -19,7 +19,6 @@ const macroPath = "/home/mpjovanovich/git/macro-md/test/macro/testMacro.js";
 const macros = await loadMacros(macroPath, (path) => import(path));
 let markdown = "start ^testNoArguments{first} ^testNoArguments{second} end";
 markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
-console.log("dun");
 
 // This is a sandbox file for debugging. It is not part of the main project.
 // const result = await parse(
