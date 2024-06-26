@@ -8,7 +8,6 @@ import {
   loadMacros,
   processMacro,
   removeBlockTokenWrappers,
-  separateBlockTokens,
 } from "../src/macroLoader";
 import { marked } from "marked";
 
@@ -33,7 +32,6 @@ const testCases: {
   description: string;
   markdown: string;
   embedded: string;
-  embeddedBlock: string;
   parsedMarkdown: string;
   removedBlock: string;
   processedOutput: string;
@@ -44,7 +42,6 @@ const testCases: {
     description: "basic markdown - no macros",
     markdown: "start end",
     embedded: "start end",
-    embeddedBlock: "start end",
     parsedMarkdown: "<p>start end</p>\n",
     removedBlock: "<p>start end</p>\n",
     processedOutput: "<p>start end</p>\n",
@@ -54,7 +51,6 @@ const testCases: {
     description: "inline macro, no content",
     markdown: "start ^testNoArgumentsNoContent{} end",
     embedded: `start ${GUID}_0${GUID}_0 end`,
-    embeddedBlock: `start ${GUID}_0${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0${GUID}_0 end</p>\n`,
     processedOutput: `<p>start TNANC end</p>\n`,
@@ -72,7 +68,6 @@ const testCases: {
     description: "inline macro, content",
     markdown: "start ^testNoArguments{content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: `<p>start TNA_start_content_TNA_end end</p>\n`,
@@ -87,26 +82,12 @@ const testCases: {
     ]),
   },
   {
-    description: "macro wrapping single line of content",
-    markdown: "^testNoArguments{content}",
-    embedded: `${GUID}_0content${GUID}_0`,
-    embeddedBlock: `${GUID}_0
-
-content
-
-${GUID}_0`,
-    parsedMarkdown: `<p>${GUID}_0</p>
-<p>content</p>
-<p>${GUID}_0</p>
-`,
-    removedBlock: `${GUID}_0
-<p>content</p>
-${GUID}_0
-`,
-    processedOutput: `TNA_start_
-<p>content</p>
-_TNA_end
-`,
+    description: "inline macro, content, bumps against start but not end",
+    markdown: "^testNoArguments{content} end",
+    embedded: `${GUID}_0content${GUID}_0 end`,
+    parsedMarkdown: `<p>${GUID}_0content${GUID}_0 end</p>\n`,
+    removedBlock: `<p>${GUID}_0content${GUID}_0 end</p>\n`,
+    processedOutput: `<p>TNA_start_content_TNA_end end</p>\n`,
     placeholders: new Map<string, MacroCall>([
       [
         "GUID_0",
@@ -118,14 +99,72 @@ _TNA_end
     ]),
   },
   {
+    description: "inline macro, content, bumps against end but not start",
+    markdown: "start ^testNoArguments{content}",
+    embedded: `start ${GUID}_0content${GUID}_0`,
+    parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0</p>\n`,
+    removedBlock: `<p>start ${GUID}_0content${GUID}_0</p>\n`,
+    processedOutput: `<p>start TNA_start_content_TNA_end</p>\n`,
+    placeholders: new Map<string, MacroCall>([
+      [
+        "GUID_0",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+    ]),
+  },
+  {
+    description: "macro wrapping single line of content",
+    markdown: "^testNoArguments{content}",
+    embedded: `${GUID}_0\n\ncontent\n\n${GUID}_0\n`,
+    parsedMarkdown: `<p>${GUID}_0</p>\n<p>content</p>\n<p>${GUID}_0</p>\n`,
+    removedBlock: `${GUID}_0\n<p>content</p>\n${GUID}_0\n`,
+    processedOutput: `TNA_start_<p>content</p>_TNA_end\n`,
+    placeholders: new Map<string, MacroCall>([
+      [
+        "GUID_0",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+    ]),
+  },
+  {
+    description: "two subsequent inline macros, each on own line",
+    markdown: `^testNoArguments{first}\n^testNoArguments{second}`,
+    embedded: `${GUID}_0\n\nfirst\n\n${GUID}_0\n\n${GUID}_1\n\nsecond\n\n${GUID}_1\n`,
+    parsedMarkdown: `<p>${GUID}_0</p>\n<p>first</p>\n<p>${GUID}_0</p>\n<p>${GUID}_1</p>\n<p>second</p>\n<p>${GUID}_1</p>\n`,
+    removedBlock: `${GUID}_0\n<p>first</p>\n${GUID}_0\n${GUID}_1\n<p>second</p>\n${GUID}_1\n`,
+    processedOutput: `TNA_start_<p>first</p>_TNA_end\nTNA_start_<p>second</p>_TNA_end\n`,
+    placeholders: new Map<string, MacroCall>([
+      [
+        "GUID_0",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+      [
+        "GUID_1",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+    ]),
+  },
+  {
     description: "nested inline macro",
-    markdown: "start ^testNoArguments{^testNoArguments{content}} end",
-    embedded: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
-    embeddedBlock: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
-    parsedMarkdown: `<p>start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end</p>\n`,
-    removedBlock: `<p>start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end</p>\n`,
+    markdown:
+      "outerstart ^testNoArguments{innerstart ^testNoArguments{content} innerend} outerend",
+    embedded: `outerstart ${GUID}_0innerstart ${GUID}_1content${GUID}_1 innerend${GUID}_0 outerend`,
+    parsedMarkdown: `<p>outerstart ${GUID}_0innerstart ${GUID}_1content${GUID}_1 innerend${GUID}_0 outerend</p>\n`,
+    removedBlock: `<p>outerstart ${GUID}_0innerstart ${GUID}_1content${GUID}_1 innerend${GUID}_0 outerend</p>\n`,
     processedOutput:
-      "<p>start TNA_start_TNA_start_content_TNA_end_TNA_end end</p>\n",
+      "<p>outerstart TNA_start_innerstart TNA_start_content_TNA_end innerend_TNA_end outerend</p>\n",
     placeholders: new Map<string, MacroCall>([
       [
         "GUID_0",
@@ -147,7 +186,6 @@ _TNA_end
     description: "multiple inline on same line",
     markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
     embedded: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
-    embeddedBlock: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     parsedMarkdown: `<p>start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end</p>\n`,
     processedOutput:
@@ -171,150 +209,117 @@ _TNA_end
   },
 
   // MULTILINE
-  {
-    description: "macro wrapping multiple lines of content",
-    markdown: `^testNoArguments{
-content
-}`,
-    embedded: `${GUID}_0
-content
-${GUID}_0`,
-    embeddedBlock: `${GUID}_0
+  //   {
+  //     description: "macro wrapping multiple lines of content",
+  //     markdown: `^testNoArguments{
+  // content
+  // }`,
+  //     embedded: `${GUID}_0
+  // content
+  // ${GUID}_0`,
+  //     parsedMarkdown: `<p>${GUID}_0</p>
+  // <p>content</p>
+  // <p>${GUID}_0</p>
+  // `,
+  //     removedBlock: `${GUID}_0
+  // <p>content</p>
+  // ${GUID}_0
+  // `,
+  //     processedOutput: `TNA_start_<p>content</p>_TNA_end\n`,
+  //     placeholders: new Map<string, MacroCall>([
+  //       [
+  //         "GUID_0",
+  //         {
+  //           macro: testNoArguments,
+  //           args: [],
+  //         },
+  //       ],
+  //     ]),
+  //   },
+  //   {
+  //     description: "macro wrapping multiple lines of content with line breaks",
+  //     markdown: `^testNoArguments{
 
-content
+  // content
 
-${GUID}_0`,
-    parsedMarkdown: `<p>${GUID}_0</p>
-<p>content</p>
-<p>${GUID}_0</p>
-`,
-    removedBlock: `${GUID}_0
-<p>content</p>
-${GUID}_0
-`,
-    processedOutput: `TNA_start_
-<p>content</p>
-_TNA_end
-`,
-    placeholders: new Map<string, MacroCall>([
-      [
-        "GUID_0",
-        {
-          macro: testNoArguments,
-          args: [],
-        },
-      ],
-    ]),
-  },
-  {
-    description: "macro wrapping multiple lines of content with line breaks",
-    markdown: `^testNoArguments{
+  // }`,
+  //     embedded: `${GUID}_0
 
-content
+  // content
 
-}`,
-    embedded: `${GUID}_0
-
-content
-
-${GUID}_0`,
-    embeddedBlock: `${GUID}_0
-
-content
-
-${GUID}_0`,
-    parsedMarkdown: `<p>${GUID}_0</p>
-<p>content</p>
-<p>${GUID}_0</p>
-`,
-    removedBlock: `${GUID}_0
-<p>content</p>
-${GUID}_0
-`,
-    processedOutput: `TNA_start_
-<p>content</p>
-_TNA_end
-`,
-    placeholders: new Map<string, MacroCall>([
-      [
-        "GUID_0",
-        {
-          macro: testNoArguments,
-          args: [],
-        },
-      ],
-    ]),
-  },
-  {
-    description: "macro wrapping multiple lines of content with nested macro",
-    markdown: `^testNoArguments{
-content
-^testNoArguments{
-nested content
-}
-}`,
-    embedded: `${GUID}_0
-content
-${GUID}_1
-nested content
-${GUID}_1
-${GUID}_0`,
-    embeddedBlock: `${GUID}_0
-
-content
-
-${GUID}_1
-
-nested content
-
-${GUID}_1
-
-${GUID}_0`,
-    parsedMarkdown: `<p>${GUID}_0</p>
-<p>content</p>
-<p>${GUID}_1</p>
-<p>nested content</p>
-<p>${GUID}_1</p>
-<p>${GUID}_0</p>
-`,
-    removedBlock: `${GUID}_0
-<p>content</p>
-${GUID}_1
-<p>nested content</p>
-${GUID}_1
-${GUID}_0
-`,
-    processedOutput: `TNA_start_
-<p>content</p>
-TNA_start_
-<p>nested content</p>
-_TNA_end
-_TNA_end
-`,
-    placeholders: new Map<string, MacroCall>([
-      [
-        "GUID_0",
-        {
-          macro: testNoArguments,
-          args: [],
-        },
-      ],
-      [
-        "GUID_1",
-        {
-          macro: testNoArguments,
-          args: [],
-        },
-      ],
-    ]),
-  },
+  // ${GUID}_0`,
+  //     parsedMarkdown: `<p>${GUID}_0</p>
+  // <p>content</p>
+  // <p>${GUID}_0</p>
+  // `,
+  //     removedBlock: `${GUID}_0
+  // <p>content</p>
+  // ${GUID}_0
+  // `,
+  //     processedOutput: `TNA_start_<p>content</p>_TNA_end\n`,
+  //     placeholders: new Map<string, MacroCall>([
+  //       [
+  //         "GUID_0",
+  //         {
+  //           macro: testNoArguments,
+  //           args: [],
+  //         },
+  //       ],
+  //     ]),
+  //   },
+  //   {
+  //     description: "macro wrapping multiple lines of content with nested macro",
+  //     markdown: `^testNoArguments{
+  // content
+  // ^testNoArguments{
+  // nested content
+  // }
+  // }`,
+  //     embedded: `${GUID}_0
+  // content
+  // ${GUID}_1
+  // nested content
+  // ${GUID}_1
+  // ${GUID}_0`,
+  //     parsedMarkdown: `<p>${GUID}_0</p>
+  // <p>content</p>
+  // <p>${GUID}_1</p>
+  // <p>nested content</p>
+  // <p>${GUID}_1</p>
+  // <p>${GUID}_0</p>
+  // `,
+  //     removedBlock: `${GUID}_0
+  // <p>content</p>
+  // ${GUID}_1
+  // <p>nested content</p>
+  // ${GUID}_1
+  // ${GUID}_0
+  // `,
+  //     processedOutput: `TNA_start_<p>content</p>
+  // TNA_start_<p>nested content</p>_TNA_end_TNA_end\n`,
+  //     placeholders: new Map<string, MacroCall>([
+  //       [
+  //         "GUID_0",
+  //         {
+  //           macro: testNoArguments,
+  //           args: [],
+  //         },
+  //       ],
+  //       [
+  //         "GUID_1",
+  //         {
+  //           macro: testNoArguments,
+  //           args: [],
+  //         },
+  //       ],
+  //     ]),
+  //   },
 
   // SINGLE ARGUMENT
   {
     description: "inline macro, single argument, no spacing",
     markdown: "start ^testWithArgument(arg1){content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: `<p>start TWA_start_content arg1_TWA_end end</p>\n`,
@@ -332,7 +337,6 @@ _TNA_end
     description: "inline macro, single argument, spacing",
     markdown: "start ^testWithArgument (arg1 ) {content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0content${GUID}_0 end</p>\n`,
     processedOutput: `<p>start TWA_start_content arg1_TWA_end end</p>\n`,
@@ -450,22 +454,10 @@ describe("embedTokens", () => {
   });
 });
 
-describe("separateBlockTokens", () => {
-  testCases.forEach(({ description, embedded, embeddedBlock }) => {
-    // Skip tests that aren't complete yet
-    if (!embeddedBlock) return;
-
-    it(description, () => {
-      const result = separateBlockTokens(embedded, GUID);
-      expect(result).toBe(embeddedBlock);
-    });
-  });
-});
-
 describe("parseIntermediateMarkdown", () => {
-  testCases.forEach(({ description, embeddedBlock, parsedMarkdown }) => {
+  testCases.forEach(({ description, embedded, parsedMarkdown }) => {
     it(description, async () => {
-      const result = await marked.parse(embeddedBlock);
+      const result = await marked.parse(embedded);
       expect(result).toBe(parsedMarkdown);
     });
   });

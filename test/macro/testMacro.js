@@ -1,20 +1,55 @@
 import { MACRO_IDENTIFIER } from "../../dist/macroLoader.js";
 
-function testNoArgumentsNoContent(content) {
-  return `testNoArgumentsNoContent`;
+/*
+ * Unit test functions
+ */
+export function testNoMacroIdentifierSet(content) {
+  return `testNoMacroIdentifierSet`;
 }
 
-// You can just assign the expected string as a property if you don't want to use the import, but it's more error prone.
+export function testNoArgumentsNoContent(content) {
+  return `TNANC`;
+}
 testNoArgumentsNoContent[MACRO_IDENTIFIER] = "testNoArgumentsNoContent";
 
-function testNoArguments(content) {
-  return `testNoArgumentsStart ${content} testNoArgumentsEnd`;
+export function testNoArguments(content) {
+  return `TNA_start_${content}_TNA_end`;
 }
 testNoArguments[MACRO_IDENTIFIER] = "testNoArguments";
 
-function testWithArgument(content, arg1) {
-  return `testWithArgument ${content} ${arg1}`;
+export function testWithArgument(content, arg1) {
+  return `TWA_start_${content} ${arg1}_TWA_end`;
 }
 testWithArgument[MACRO_IDENTIFIER] = "testWithArgument";
 
-export { testNoArgumentsNoContent, testNoArguments, testWithArgument };
+/*
+ * More test functions
+ */
+
+// Just a way to move html to post processing of markdown.
+export function raw(content, rawContent) {
+  //   return rawContent;
+  //   return content;
+  return "";
+}
+raw[MACRO_IDENTIFIER] = "raw";
+
+export function upperContent(content) {
+  return content.toUpperCase();
+}
+upperContent[MACRO_IDENTIFIER] = "upperContent";
+
+export function lowerContent(content) {
+  return content.toLowerCase();
+}
+lowerContent[MACRO_IDENTIFIER] = "lowerContent";
+
+export function wrap(content, wrapper) {
+  return `${wrapper}${content}${wrapper}`;
+}
+wrap[MACRO_IDENTIFIER] = "wrap";
+
+export function wrapHTML(content, wrapper) {
+  return `${wrapper}${content}${wrapper.replace("<", "</")}`;
+}
+wrapHTML[MACRO_IDENTIFIER] = "wrapHTML";

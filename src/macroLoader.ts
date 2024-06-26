@@ -25,25 +25,13 @@ export async function parse(
   const guid = `macro_md_${Date.now().toString()}`;
   let placeholders = new Map<string, MacroCall>();
 
-  //   MACRO FORMATS:
-
-  // Macros are in the form ``identifier(args){content}
-  //   ``mac{...} = macro with no args
-  //   ``mac(a,b){...} = macro with args
-  //   ``mac(*a){...} = macro with indefinite array argument
-  //   TODO: v1.1 - ``mac1 mac2(80){...} = multiple macros for the same content
-
-  // Text between the macro delimiter and the opening curly brace is treated as
-  // a space delineated list of macro calls on the following content to be
-  // applied in left to right order.
-
   // Load the user defined macros and markdown.
   const macros = await loadMacros(macroPath, (path) => import(path));
-  let markdown = await loadMarkdown(markdownPath);
 
-  // Process the markdown and macros.
+  // Process markdown. Each step transforms the markdown.
+  let markdown = await loadMarkdown(markdownPath);
+  markdown = cleanLineEndings(markdown, escapedMacroDelimiter);
   markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
-  markdown = separateBlockTokens(markdown, guid);
   markdown = await marked.parse(markdown);
   markdown = removeBlockTokenWrappers(markdown, guid);
   markdown = processMacro(markdown, guid, placeholders);
@@ -64,6 +52,30 @@ export async function checkFileExists(filePath: string): Promise<boolean> {
     .then(() => true)
     .catch(() => false);
   return exists;
+}
+
+/**
+ * Removes starting and trailing spaces from lines, making processing much
+ * easier later in the pipeline.
+ */
+export function cleanLineEndings(
+  markdown: string,
+  escapedMacroDelimiter: string
+): string {
+  return (
+    markdown
+      .replace(
+        new RegExp(
+          `\\n[ \\t]*(${escapedMacroDelimiter}\\s*\\S+?\\s*(?:\\(.*?\\))?\\s*\\{)`,
+          "g"
+        ),
+        "\n$1"
+      )
+      // Remove spaces or tabs between a closing curly brace and a newline
+      .replace(/\}(?:[ \t]*)\n/g, "}\n")
+      // Finally, remove any space or tab characters at the start/end of the markdown
+      .trim()
+  );
 }
 
 /**
@@ -90,7 +102,11 @@ export function embedTokens(
     if (!macroFunction) {
       throw new Error(`Macro not found: ${macro}`);
     }
-    const macroContent = getMacroContent(markdown, macroRegex, match);
+    const { macroContent, isBlock } = getMacroContent(
+      markdown,
+      macroRegex,
+      match
+    );
 
     let childArgs = argsList ? argsList.split(",") : [];
     childArgs = childArgs.map((arg) => arg.trim());
@@ -112,10 +128,20 @@ export function embedTokens(
     );
 
     // Replace the macro with a placeholder
-    markdown = markdown.replace(
-      match[0] + macroContent + "}",
-      macroPlaceholder + innerMarkdown + macroPlaceholder
-    );
+    if (isBlock) {
+      // Block macros need to have the identifier on its own line. This will turn
+      // them into <p> tags which we will later remove. The end result is that the
+      // macro tags will wrap the html rather than be inline.
+      markdown = markdown.replace(
+        match[0] + macroContent + "}",
+        `${macroPlaceholder}\n\n${innerMarkdown}\n\n${macroPlaceholder}\n`
+      );
+    } else {
+      markdown = markdown.replace(
+        match[0] + macroContent + "}",
+        macroPlaceholder + innerMarkdown + macroPlaceholder
+      );
+    }
 
     match = macroRegex.exec(markdown);
   }
@@ -141,11 +167,15 @@ export function getMacroContent(
   content: string,
   macroRegex: RegExp,
   match: RegExpExecArray
-): string {
+): {
+  macroContent: string;
+  isBlock: boolean;
+} {
   // We may have nested macros in the form: ^echo{I ^echo{was} echoed.}
   // This function will return the content of the outermost macro, ignoring all
   // nested macros.
   // If there are no macros it will return the original content.
+  const macroIdentifierStart = match.index;
   let macroContentStart = match.index + match[0].length;
   let macroContentEnd = -1;
 
@@ -196,7 +226,23 @@ export function getMacroContent(
     macroContent = content.substring(macroContentStart, macroContentEnd);
   }
 
-  return macroContent;
+  let isBlock = true;
+  if (
+    macroIdentifierStart !== 0 &&
+    content[macroIdentifierStart - 1] !== "\n"
+  ) {
+    isBlock = false;
+  }
+  // If the end is not the very last character and the next character is not a
+  // newline, then this is an inline macro.
+  if (
+    macroContentEnd !== content.length - 1 &&
+    content[macroContentEnd + 1] !== "\n"
+  ) {
+    isBlock = false;
+  }
+
+  return { macroContent, isBlock };
 }
 
 /**
@@ -258,10 +304,12 @@ export function processMacro(
       childStart + childPlaceholder.length,
       childEnd
     );
+    const trimmedChildContent = childContent.trim();
 
     // Recursively process the next placeholder
     processedMarkdown = processMacro(
-      childContent,
+      //   childContent,
+      trimmedChildContent,
       macroGuid,
       placeholders,
       childPlaceholder
@@ -307,105 +355,4 @@ export function removeBlockTokenWrappers(
   }
 
   return markdown;
-}
-
-/**
- * This function isolates the block level tokens from the inline content by
- * placing them on their own lines. They'll end up as <p> tags in the final
- * HTML, which will be stripped out later.
- */
-export function separateBlockTokens(
-  markdown: string,
-  macroGuid: string
-): string {
-  const placeholderRegex = new RegExp(`${macroGuid}_\\d+`, "g");
-
-  // Remove all carriage returns and split the markdown into lines.
-  let lines = markdown
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .map((line) => line.trim());
-
-  // Prepend any macros that are at the beginning of a line to the previous line.
-  for (let i = 0; i < lines.length; i++) {
-    let matchFound: boolean | undefined;
-    while (matchFound !== false) {
-      // Reset the RegEx index and look for the next placeholder
-      placeholderRegex.lastIndex = 0;
-      matchFound = false;
-      const match = placeholderRegex.exec(lines[i]);
-
-      // If a match was found, and it's the first thing on the line, and the line is not the match itself...
-      if (match && match.index === 0 && lines[i] !== match[0]) {
-        matchFound = true;
-
-        // Prepend match to the previous line
-        if (i === 0) {
-          // Can't remember why I did this... needed?
-          //   lines.unshift("");
-          lines.unshift(match[0]);
-        } else {
-          //   lines.splice(i, 0, "");
-          lines.splice(i, 0, match[0]);
-        }
-
-        // i += 2;
-        i++;
-        lines[i] = lines[i].replace(match[0], "");
-      }
-    }
-  }
-
-  // Append any macros that are at the end of a line to the next line.
-  for (let i = 0; i < lines.length; i++) {
-    let matchFound: boolean | undefined;
-    while (matchFound !== false) {
-      // Reset the RegEx index and look for the next placeholder
-      placeholderRegex.lastIndex = 0;
-      matchFound = false;
-
-      // Get the last occurance of the placeholder in the line.
-      let lastIndex = lines[i].lastIndexOf(macroGuid);
-      if (lastIndex > 0) {
-        const match = placeholderRegex.exec(lines[i].substring(lastIndex));
-
-        // If a match was found and it's the last thing on the line...
-        if (match && lines[i].substring(lastIndex + match[0].length) === "") {
-          matchFound = true;
-
-          // Append match to the next line
-          if (i === lines.length - 1) {
-            // We will do the line padding in the next step instead
-            // lines.push("");
-            lines.push(match[0]);
-          } else {
-            lines.splice(i + 1, 0, match[0]);
-            // lines.splice(i + 1, 0, "");
-          }
-
-          lines[i] = lines[i].substring(0, lastIndex);
-        }
-      }
-    }
-  }
-
-  // Block level tags must be padded with an empty line so that they are
-  // converted to <p> tags when parsed as markdown.
-  for (let i = 0; i < lines.length; i++) {
-    // Add an empty line before each  block token if there isn't one already.
-    if (lines[i].startsWith(macroGuid)) {
-      if (i !== 0 && lines[i - 1] !== "") {
-        lines.splice(i, 0, "");
-        i++;
-      }
-
-      // Add an empty line after each  block token if there isn't one already.
-      if (i !== lines.length - 1 && lines[i + 1] !== "") {
-        lines.splice(i + 1, 0, "");
-        i++;
-      }
-    }
-  }
-
-  return lines.join("\n");
 }

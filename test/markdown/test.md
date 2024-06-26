@@ -1,7 +1,11 @@
-# Test Markdown File
+^lowerContent{
 
-This file has some _markdown_ content.
+# FIRST
 
-START ^testNoArgumentsNoContent{I ^testWithArgument($){was} echoed.} END
+}
 
-And some **more** _markdown_ content.
+Some ^upperContent{**more**} content.
+
+More ^wrap(%){stuff}
+
+Hooray ^upperContent{for} post-processing!
