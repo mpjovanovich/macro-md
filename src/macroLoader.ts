@@ -248,9 +248,9 @@ export function processMacro(
 
   // Check for child placeholders
   const placeholderRegex = new RegExp(`${macroGuid}_\\d+`, "g");
-  const match = placeholderRegex.exec(markdown);
+  let match = placeholderRegex.exec(markdown);
 
-  if (match) {
+  while (match) {
     const childPlaceholder = match[0];
     const childStart = markdown.indexOf(childPlaceholder);
     const childEnd = markdown.indexOf(childPlaceholder, childStart + 1);
@@ -271,6 +271,8 @@ export function processMacro(
       childPlaceholder + childContent + childPlaceholder,
       processedMarkdown
     );
+
+    match = placeholderRegex.exec(markdown);
   }
 
   if (placeholder) {

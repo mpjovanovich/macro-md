@@ -8,7 +8,7 @@ function testNoArgumentsNoContent(content) {
 testNoArgumentsNoContent[MACRO_IDENTIFIER] = "testNoArgumentsNoContent";
 
 function testNoArguments(content) {
-  return `testNoArguments ${content}`;
+  return `testNoArgumentsStart ${content} testNoArgumentsEnd`;
 }
 testNoArguments[MACRO_IDENTIFIER] = "testNoArguments";
 
