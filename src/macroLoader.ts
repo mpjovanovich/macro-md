@@ -339,14 +339,16 @@ export function separateBlockTokens(
 
         // Prepend match to the previous line
         if (i === 0) {
-          lines.unshift("");
+          // Can't remember why I did this... needed?
+          //   lines.unshift("");
           lines.unshift(match[0]);
         } else {
-          lines.splice(i, 0, "");
+          //   lines.splice(i, 0, "");
           lines.splice(i, 0, match[0]);
         }
 
-        i += 2;
+        // i += 2;
+        i++;
         lines[i] = lines[i].replace(match[0], "");
       }
     }
@@ -371,11 +373,12 @@ export function separateBlockTokens(
 
           // Append match to the next line
           if (i === lines.length - 1) {
-            lines.push("");
+            // Can't remember why I did this... needed?
+            // lines.push("");
             lines.push(match[0]);
           } else {
             lines.splice(i + 1, 0, match[0]);
-            lines.splice(i + 1, 0, "");
+            // lines.splice(i + 1, 0, "");
           }
 
           lines[i] = lines[i].substring(0, lastIndex);

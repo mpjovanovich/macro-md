@@ -6,6 +6,7 @@ import {
   escapeRegExp,
   embedTokens,
   loadMacros,
+  separateBlockTokens,
 } from "../src/macroLoader";
 
 /* **************************************************
@@ -37,7 +38,7 @@ const testCases = [
     description: "inline macro, no content",
     markdown: "start ^testNoArgumentsNoContent{} end",
     embedded: `start ${GUID}_0${GUID}_0 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0${GUID}_0 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -46,7 +47,7 @@ const testCases = [
     description: "inline macro, content",
     markdown: "start ^testNoArguments{content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -55,7 +56,9 @@ const testCases = [
     description: "macro wrapping single line of content",
     markdown: "^testNoArgumentsNoContent{content}",
     embedded: `${GUID}_0content${GUID}_0`,
-    embeddedBlock: "",
+    embeddedBlock: `${GUID}_0
+content
+${GUID}_0`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -64,7 +67,7 @@ const testCases = [
     description: "nested inline macro",
     markdown: "start ^testNoArguments{^testNoArguments{content}} end",
     embedded: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -73,7 +76,7 @@ const testCases = [
     description: "multiple inline on same line",
     markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
     embedded: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0first${GUID}_0 ${GUID}_1second${GUID}_1 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -88,7 +91,9 @@ content
     embedded: `${GUID}_0
 content
 ${GUID}_0`,
-    embeddedBlock: "",
+    embeddedBlock: `${GUID}_0
+content
+${GUID}_0`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -105,7 +110,11 @@ content
 content
 
 ${GUID}_0`,
-    embeddedBlock: "",
+    embeddedBlock: `${GUID}_0
+
+content
+
+${GUID}_0`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -124,7 +133,12 @@ ${GUID}_1
 nested content
 ${GUID}_1
 ${GUID}_0`,
-    embeddedBlock: "",
+    embeddedBlock: `${GUID}_0
+content
+${GUID}_1
+nested content
+${GUID}_1
+${GUID}_0`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -135,7 +149,7 @@ ${GUID}_0`,
     description: "inline macro, single argument, no spacing",
     markdown: "start ^testWithArgument(arg1){content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -144,7 +158,7 @@ ${GUID}_0`,
     description: "inline macro, single argument, spacing",
     markdown: "start ^testWithArgument (arg1 ) {content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
-    embeddedBlock: "",
+    embeddedBlock: `start ${GUID}_0content${GUID}_0 end`,
     parsedMarkdown: "",
     removedBlock: "",
     processedOutput: "",
@@ -254,8 +268,19 @@ describe("embedTokens", () => {
   });
 });
 
+describe("separateBlockTokens", () => {
+  testCases.forEach(({ description, embedded, embeddedBlock }) => {
+    // Skip tests that aren't complete yet
+    if (!embeddedBlock) return;
+
+    it(description, () => {
+      const result = separateBlockTokens(embedded, GUID);
+      expect(result).toBe(embeddedBlock);
+    });
+  });
+});
+
 // TO TEST:
-//   markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
 //   markdown = separateBlockTokens(markdown, guid);
 //   markdown = await marked.parse(markdown);
 //   markdown = removeBlockTokenWrappers(markdown, guid);
