@@ -23,6 +23,7 @@ const existingFileStats = {
 // There's a property for each step in the transformation pipeline.
 // This allows for consistent testing of each step for each use case.
 const testCases = [
+  // INLINE
   {
     description: "basic markdown - no macros",
     markdown: "start end",
@@ -33,31 +34,120 @@ const testCases = [
     processedOutput: "<p>start end</p>\n",
   },
   {
-    description: "inline macro, no arguments, no content",
+    description: "inline macro, no content",
     markdown: "start ^testNoArgumentsNoContent{} end",
     embedded: `start ${GUID}_0${GUID}_0 end`,
     embeddedBlock: "",
     parsedMarkdown: "",
     removedBlock: "",
-    processedOutput: "<p>start testNoArgumentsNoContent end</p>\n",
+    processedOutput: "",
   },
   {
-    description: "inline macro, no arguments, content",
+    description: "inline macro, content",
     markdown: "start ^testNoArguments{content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: "",
     parsedMarkdown: "",
     removedBlock: "",
-    processedOutput: "<p>start testNoArguments content end</p>\n",
+    processedOutput: "",
   },
   {
-    description: "inline macro, argument, no spacing",
+    description: "macro wrapping single line of content",
+    markdown: "^testNoArgumentsNoContent{content}",
+    embedded: `${GUID}_0content${GUID}_0`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+  {
+    description: "nested inline macro",
+    markdown: "start ^testNoArguments{^testNoArguments{content}} end",
+    embedded: `start ${GUID}_0${GUID}_1content${GUID}_1${GUID}_0 end`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+  {
+    description: "multiple inline on same line",
+    markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
+    embedded: `start ${GUID}_0first$${GUID}_0 {GUID}_1second${GUID}_1 end`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+
+  // MULTILINE
+  {
+    description: "macro wrapping multiple lines of content",
+    markdown: `^testNoArgumentsNoContent{
+content
+}`,
+    embedded: `${GUID}_0
+content
+${GUID}_0`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+  {
+    description: "macro wrapping multiple lines of content with line breaks",
+    markdown: `^testNoArgumentsNoContent{
+
+content
+
+}`,
+    embedded: `${GUID}_0
+
+content
+
+${GUID}_0`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+  {
+    description: "macro wrapping multiple lines of content with nested macro",
+    markdown: `^testNoArgumentsNoContent{
+content
+^testNoArgumentsNoContent{
+nested content
+}
+}`,
+    embedded: `${GUID}_0
+content
+${GUID}_1
+nested content
+${GUID}_1
+${GUID}_0`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
+  },
+
+  // SINGLE ARGUMENT
+  {
+    description: "inline macro, single argument, no spacing",
     markdown: "start ^testWithArgument(arg1){content} end",
     embedded: `start ${GUID}_0content${GUID}_0 end`,
     embeddedBlock: "",
     parsedMarkdown: "",
     removedBlock: "",
-    processedOutput: "<p>start testWithArgument content arg1 end</p>\n",
+    processedOutput: "",
+  },
+  {
+    description: "inline macro, single argument, spacing",
+    markdown: "start ^testWithArgument (arg1 ) {content} end",
+    embedded: `start ${GUID}_0content${GUID}_0 end`,
+    embeddedBlock: "",
+    parsedMarkdown: "",
+    removedBlock: "",
+    processedOutput: "",
   },
 ];
 
@@ -172,20 +262,7 @@ describe("embedTokens", () => {
 //   markdown = processMacro(markdown, guid, placeholders);
 
 /* TODO:
-Currently broken:
-- first line is wrapped in a macro.
-- Multiple inline non-nested tags
-
 No args:
-- Single inline
-- Inline with nested inline
-- Multiple inline on same line
-- Single block different line from content
-- Single block same line as content
-- Single block wrapping whole file
-- Block with nested inline 
-- Multiple nested block
-- Multiple nested inline
 - Multiple macros same content
 
 Args
