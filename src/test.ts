@@ -10,7 +10,6 @@ import {
   parse,
 } from "./macroLoader.js";
 import { marked } from "marked";
-import fs from "fs";
 
 // This is a sandbox file for debugging. It is not part of the main project.
 
@@ -26,6 +25,7 @@ const outputPath = "/mnt/c/Users/mpjov/Desktop/markdownTest.html";
 // let markdown = "start ^testNoArguments{content} end";
 // let markdown = `^testNoArguments{first}
 // ^testNoArguments{second}`;
+// let markdown = "Even more ^wrap(%){^wrap($){stuff}}";
 let markdown = await loadMarkdown(markdownPath);
 
 const macroDelimiter = "^";
@@ -40,7 +40,9 @@ let placeholders = new Map<string, MacroCall>();
 const macros = await loadMacros(macroPath, (path) => import(path));
 
 markdown = cleanLineEndings(markdown, escapedMacroDelimiter);
-markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
+markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid, {
+  index: 0,
+});
 markdown = await marked.parse(markdown);
 markdown = removeBlockTokenWrappers(markdown, guid);
 markdown = processMacro(markdown, guid, placeholders);

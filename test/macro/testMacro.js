@@ -34,15 +34,15 @@ export function raw(content, rawContent) {
 }
 raw[MACRO_IDENTIFIER] = "raw";
 
-export function upperContent(content) {
+export function upper(content) {
   return content.toUpperCase();
 }
-upperContent[MACRO_IDENTIFIER] = "upperContent";
+upper[MACRO_IDENTIFIER] = "upper";
 
-export function lowerContent(content) {
+export function lower(content) {
   return content.toLowerCase();
 }
-lowerContent[MACRO_IDENTIFIER] = "lowerContent";
+lower[MACRO_IDENTIFIER] = "lower";
 
 export function wrap(content, wrapper) {
   return `${wrapper}${content}${wrapper}`;

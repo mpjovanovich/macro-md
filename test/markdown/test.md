@@ -1,13 +1,5 @@
-^lowerContent{
+# This is some ^upper{ _awesome_ } markdown
 
-# FIRST
+More ^wrap(%){^wrap($){stuff}}
 
-}
-
-Some ^upperContent{**more**} content.
-
-More ^wrap(%){stuff}
-
-Even more ^wrap(%){^wrap($){stuff}}
-
-Hooray ^upperContent{for} post-processing!
+^upper{yay}

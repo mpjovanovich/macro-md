@@ -446,7 +446,8 @@ describe("embedTokens", () => {
         macroRegex,
         macros,
         result_placeholders,
-        GUID
+        GUID,
+        { index: 0 }
       );
       expect(result).toBe(embedded);
       expect(result_placeholders).toEqual(placeholders);

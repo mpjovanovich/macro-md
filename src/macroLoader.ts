@@ -31,7 +31,9 @@ export async function parse(
   // Process markdown. Each step transforms the markdown.
   let markdown = await loadMarkdown(markdownPath);
   markdown = cleanLineEndings(markdown, escapedMacroDelimiter);
-  markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid);
+  markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid, {
+    index: 0,
+  });
   markdown = await marked.parse(markdown);
   markdown = removeBlockTokenWrappers(markdown, guid);
   markdown = processMacro(markdown, guid, placeholders);
@@ -90,7 +92,8 @@ export function embedTokens(
   macros: Map<string, MacroFunction>,
   placeholders: Map<string, MacroCall>,
   macroGuid: string,
-  macroIndex: number = 0
+  macroIndex: { index: number }, // Hack to let us pass by reference
+  inline?: boolean
 ): string {
   let match = macroRegex.exec(markdown);
   while (match) {
@@ -102,33 +105,44 @@ export function embedTokens(
     if (!macroFunction) {
       throw new Error(`Macro not found: ${macro}`);
     }
-    const { macroContent, isBlock } = getMacroContent(
-      markdown,
-      macroRegex,
-      match
-    );
 
     let childArgs = argsList ? argsList.split(",") : [];
     childArgs = childArgs.map((arg) => arg.trim());
 
-    const macroPlaceholder = `${macroGuid}_${macroIndex}`;
+    const macroPlaceholder = `${macroGuid}_${macroIndex.index}`;
     placeholders.set(macroPlaceholder, {
       macro: macroFunction,
       args: childArgs,
     });
-    macroIndex++;
+    macroIndex.index++;
 
+    const { start, end } = getMacroContent(markdown, macroRegex, match);
+
+    // Check if inline. If it is don't try to put any block level macros as children.
+    if (!inline) {
+      if (match.index !== 0 && markdown[match.index - 1] !== "\n") {
+        inline = true;
+      }
+      // If the end is not the very last character and the next character is not a
+      // newline, then this is an inline macro.
+      if (end !== markdown.length - 1 && markdown[end + 1] !== "\n") {
+        inline = true;
+      }
+    }
+
+    const macroContent = markdown.substring(start, end);
     const innerMarkdown = embedTokens(
       macroContent,
       macroRegex,
       macros,
       placeholders,
       macroGuid,
-      macroIndex
+      macroIndex,
+      inline
     );
 
     // Replace the macro with a placeholder
-    if (isBlock) {
+    if (!inline) {
       // Block macros need to have the identifier on its own line. This will turn
       // them into <p> tags which we will later remove. The end result is that the
       // macro tags will wrap the html rather than be inline.
@@ -169,14 +183,13 @@ export function getMacroContent(
   macroRegex: RegExp,
   match: RegExpExecArray
 ): {
-  macroContent: string;
-  isBlock: boolean;
+  start: number;
+  end: number;
 } {
   // We may have nested macros in the form: ^echo{I ^echo{was} echoed.}
   // This function will return the content of the outermost macro, ignoring all
   // nested macros.
   // If there are no macros it will return the original content.
-  const macroIdentifierStart = match.index;
   let macroContentStart = match.index + match[0].length;
   let macroContentEnd = -1;
 
@@ -227,23 +240,7 @@ export function getMacroContent(
     macroContent = content.substring(macroContentStart, macroContentEnd);
   }
 
-  let isBlock = true;
-  if (
-    macroIdentifierStart !== 0 &&
-    content[macroIdentifierStart - 1] !== "\n"
-  ) {
-    isBlock = false;
-  }
-  // If the end is not the very last character and the next character is not a
-  // newline, then this is an inline macro.
-  if (
-    macroContentEnd !== content.length - 1 &&
-    content[macroContentEnd + 1] !== "\n"
-  ) {
-    isBlock = false;
-  }
-
-  return { macroContent, isBlock };
+  return { start: macroContentStart, end: macroContentEnd };
 }
 
 /**
