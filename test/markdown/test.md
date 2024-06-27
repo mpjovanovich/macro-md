@@ -1,5 +1,17 @@
+^head{}
+
+# Regular Markdown Works Fine
+
 This is some ^upper{_awesome_} markdown
 
-More ^wrap(%){^wrap($){stuff}}
+^addAttribute(id,awesomeP){sum tags}
 
-^upper{yay} hooray!
+^addAttribute(style,color:red;){sum more tagz}
+
+^wrapHtml(<div class="cool">){
+**Markdown** here.
+}
+
+^upper{yay}
+
+START ^wrap(%){^wrap(&){yay}} END

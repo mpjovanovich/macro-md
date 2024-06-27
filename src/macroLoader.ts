@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import { marked } from "marked";
+import pretty from "pretty";
 
 export const MACRO_IDENTIFIER = "macroIdentifier";
 export type MacroFunction = (...args: string[]) => string;
@@ -30,13 +31,33 @@ export async function parse(
 
   // Process markdown. Each step transforms the markdown.
   let markdown = await loadMarkdown(markdownPath);
+
+  // Remove starting and trailing spaces from lines
   markdown = cleanLineEndings(markdown, escapedMacroDelimiter);
+
+  // Embed tokens in the markdown
   markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid, {
     index: 0,
   });
+
+  // Convert the embedded markdown to HTML
   markdown = await marked.parse(markdown);
+
+  // Get rid of extraneous <p> tags from markdown compilation
   markdown = removeTokenWrappers(markdown, guid);
+
+  // Process the macros
   markdown = processMacro(markdown, guid, placeholders);
+
+  // Remove empty <p> tags
+  markdown = markdown.replace(/<p>\s*<\/p>/gi, "");
+
+  // Pretty print the HTML
+  const options = {
+    ocd: true,
+    wrap_line_length: 80,
+  };
+  markdown = pretty(markdown, options);
 
   return markdown;
 }
@@ -117,6 +138,7 @@ export function embedTokens(
     macroIndex.index++;
 
     const { start, end } = getMacroContent(markdown, macroRegex, match);
+    const macroContent = markdown.substring(start, end);
 
     // Check if inline. If it is don't try to put any block level macros as children.
     if (!inline) {
@@ -130,7 +152,6 @@ export function embedTokens(
       }
     }
 
-    const macroContent = markdown.substring(start, end);
     const innerMarkdown = embedTokens(
       macroContent,
       macroRegex,
@@ -162,6 +183,7 @@ export function embedTokens(
       );
     }
 
+    inline = undefined;
     macroRegex.lastIndex = 0;
     match = macroRegex.exec(markdown);
   }
@@ -311,7 +333,6 @@ export function processMacro(
 
     // Recursively process the next placeholder
     processedMarkdown = processMacro(
-      //   childContent,
       trimmedChildContent,
       macroGuid,
       placeholders,
