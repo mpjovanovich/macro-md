@@ -58,4 +58,4 @@ const options = {
 };
 markdown = pretty(markdown, options);
 console.log(markdown);
-// fs.writeFileSync(outputPath, markdown);
+fs.writeFileSync(outputPath, markdown);

@@ -1,39 +1,10 @@
 import { MACRO_IDENTIFIER } from "../../dist/macroLoader.js";
-import { html, parseFragment, serialize } from "parse5";
+import { parseFragment, serialize } from "parse5";
 
 /*
- * Unit test functions
+ * Sandbox macros for testing.
+ * These are in no way robust. Use at your own risk.
  */
-export function testNoMacroIdentifierSet(content) {
-  return `testNoMacroIdentifierSet`;
-}
-
-export function testNoArgumentsNoContent(content) {
-  return `TNANC`;
-}
-testNoArgumentsNoContent[MACRO_IDENTIFIER] = "testNoArgumentsNoContent";
-
-export function testNoArguments(content) {
-  return `TNA_start_${content}_TNA_end`;
-}
-testNoArguments[MACRO_IDENTIFIER] = "testNoArguments";
-
-export function testWithArgument(content, arg1) {
-  return `TWA_start_${content} ${arg1}_TWA_end`;
-}
-testWithArgument[MACRO_IDENTIFIER] = "testWithArgument";
-
-/*
- * More test functions
- */
-
-// Just a way to move html to post processing of markdown.
-export function raw(content, rawContent) {
-  //   return rawContent;
-  //   return content;
-  return "";
-}
-raw[MACRO_IDENTIFIER] = "raw";
 
 export function upper(content) {
   return content.toUpperCase();
@@ -49,6 +20,13 @@ export function wrap(content, wrapper) {
   return `${wrapper}${content}${wrapper}`;
 }
 wrap[MACRO_IDENTIFIER] = "wrap";
+
+export function wrapHtml(content, wrapper) {
+  const wrapperTag = wrapper.replace("<", "").replace(">", "").split(" ")[0];
+  const html = `${wrapper}${content}</${wrapperTag}>`;
+  return html;
+}
+wrapHtml[MACRO_IDENTIFIER] = "wrapHtml";
 
 export function addAttribute(content, attributeName, attributeValue) {
   const fragment = parseFragment(content);
@@ -73,13 +51,6 @@ export function addAttribute(content, attributeName, attributeValue) {
   return serialize(fragment);
 }
 addAttribute[MACRO_IDENTIFIER] = "addAttribute";
-
-export function wrapHtml(content, wrapper) {
-  const wrapperTag = wrapper.replace("<", "").replace(">", "").split(" ")[0];
-  const html = `${wrapper}${content}</${wrapperTag}>`;
-  return html;
-}
-wrapHtml[MACRO_IDENTIFIER] = "wrapHtml";
 
 export function head(content) {
   return `<head>

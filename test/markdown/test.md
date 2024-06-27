@@ -4,7 +4,7 @@
 
 This is some ^upper{_awesome_} markdown
 
-^addAttribute(id,awesomeP){sum tags}
+^addAttribute(id,awesomeP){some tags}
 
 ^addAttribute(style,color:red;){sum more tagz}
 
