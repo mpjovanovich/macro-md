@@ -1,5 +1,5 @@
-# This is some ^upper{ _awesome_ } markdown
+This is some ^upper{_awesome_} markdown
 
 More ^wrap(%){^wrap($){stuff}}
 
-^upper{yay}
+^upper{yay} hooray!

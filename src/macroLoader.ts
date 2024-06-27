@@ -35,7 +35,7 @@ export async function parse(
     index: 0,
   });
   markdown = await marked.parse(markdown);
-  markdown = removeBlockTokenWrappers(markdown, guid);
+  markdown = removeTokenWrappers(markdown, guid);
   markdown = processMacro(markdown, guid, placeholders);
 
   return markdown;
@@ -141,7 +141,7 @@ export function embedTokens(
       inline
     );
 
-    // Replace the macro with a placeholder
+    // Replace the macro with a placeholder.
     if (!inline) {
       // Block macros need to have the identifier on its own line. This will turn
       // them into <p> tags which we will later remove. The end result is that the
@@ -151,9 +151,14 @@ export function embedTokens(
         `${macroPlaceholder}\n\n${innerMarkdown}\n\n${macroPlaceholder}\n`
       );
     } else {
+      // We pad each side with a space so that it works in the case that there is
+      // markdown syntax touching the curly braces. The markdown parser would not
+      // recognize the inner content as markdown otherwise. E.g.:
+      // ^macro{**bold**} would not render the bold.  These are trimmed away in
+      // the processMacro function.
       markdown = markdown.replace(
         match[0] + macroContent + "}",
-        macroPlaceholder + innerMarkdown + macroPlaceholder
+        `${macroPlaceholder} ${innerMarkdown} ${macroPlaceholder}`
       );
     }
 
@@ -338,7 +343,7 @@ export function processMacro(
 /**
  * This function strips the <p> and </p> tags from the block level tokens.
  */
-export function removeBlockTokenWrappers(
+export function removeTokenWrappers(
   markdown: string,
   macroGuid: string
 ): string {
