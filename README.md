@@ -60,7 +60,7 @@ Casing does matter.
 Macros may be nested, allowing for modular design:
 
 ```markdown
-^first{ Do ^second{some} stuff. }
+^macro1{ Do ^macro2{some} stuff. }
 ```
 
 ### Inline vs Block Macros
