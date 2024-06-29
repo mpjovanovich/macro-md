@@ -28,7 +28,7 @@ C.
 }
 ```
 
-... we first compile the markdown inside of the curly braces then pass it to a user defined macro identified by "demo" to transform the HTML output.
+... we first compile the markdown inside of the curly braces then pass it to a user defined macro identified by "demo". The user defined macro may return any string.
 
 ## Syntax
 
@@ -44,67 +44,71 @@ C.
 - ``mac{ = macro with no args
 - ``mac(a,b){ = macro with args
 - ``mac(\*a){ = macro with indefinite array argument
-- ``mac1 mac2(80){ = Text between the macro delimiter and the opening curly brace is treated as a space delineated list of macro calls on the following content to be applied in left to right order.
+- ``mac1 mac2(80){ = space delineated list of macro calls to be applied in left to right order.
 
-\*Spacing does not matter.
+\*Spacing does not matter:
+- ` ``mac(a,b){ ` == ` mac(  a,b )  { `
 
 \*Casing does matter.
+- ` ``mac(a,b){ ` != `Mac(a,b){ `
 
-## Examples
+## Examples 
 
-TODO: examples
+### Use Cases
 
-- Adding CSS class to elements by modifying the class attribute
-- Adding id attributes to elements for use with scripts
-- Wrapping several elements in a container
-- Transforming text node
+- Add CSS class to elements by modifying the class attribute
+- Add id attributes to elements for use with scripts
+- Wrap several elements in a container element
+- Transform a text node
 
-- ``< = align left
-- ``> = align right
-- ``^ = align center
-- ``demo = add class named demo.
-- ``+(demo) = add class passed in as arg, "demo"
-- ``img(src,alt,width){} = create image element
-- ``fig(src,alt,caption){} = create a figure with caption.
+### Macro Formats
+
+- ``head{} = "include" macro to insert some header content
+- ``^{...} = align center
+- ``demo{...} = wrap content in "demo" div
+- ``+(my-class){...} = add class passed in as arg to macro, "my-class"
+- ``img(src,alt,width){...} = create image element
+- ``fig(src,alt,caption){...} = create a figure with caption.
 - anything that can be done in JS!
 
 ## API
 
-The user must define:
+`macro-md` defines a single public entry point:
 
-- source file path
-- macro file path
-
-The user may define:
-
-- macro_delimiter (default=``)
-- use_highlighting (default=true)
-- highlighter (default=pygmentize)
-- max_depth (default=10) - depth of nested macros
-
-As requirements change code wrapped in macros may be modified in a consistent way.
-
-Multiple output formats may also be obtained by passing in different macro scripts.
-
-TODO: example
+```typescript
+export async function parse(
+  markdownPath: string,
+  macroPath: string,
+  macroDelimiter: string
+): Promise<string> {
+```
 
 ## Macro File Format
 
-The macro file may contain any code that can run within the Node.js ecosystem, and must adhere to the following format:
+- The macro file may be any file that can be loaded with the JavaScript's global `import` function.
+- Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro.
+- These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
+- Additional arguments for user defined macros are optional.
 
-TODO: skeleton
+_Example Macro Definition_
 
-The identifier may be any string, including the empty string.
+```javascript
+export function wrap(content, wrapper) {
+  return `${wrapper}${content}${wrapper}`;
+}
+wrap[MACRO_IDENTIFIER] = "wrap";
+```
 
-TODO: Content... Similar to react special prop for children. Can't remember what this is, see demos.
+_Macro Call_
 
-SIMPLE EXAMPLE
+```markdown
+This is some ``wrap(!){wrapped} content.
+```
+_Result_
 
-example
-
-PARSE5 EXAMPLE
-
-example
+```html
+<p>This is some ``wrap(!){wrapped} content.</p>
+```
 
 ## Nested Macros
 
