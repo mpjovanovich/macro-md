@@ -46,8 +46,7 @@ _C._
 
 - `^mac{` = macro with no args
 - `^mac(a,b){` = macro with args
-- `^mac(\*a){` = macro with indefinite array argument
-- `^mac1 mac2(80){` = space delineated list of macro calls to be applied in left to right order.
+- `^mac1 mac2(80){` = space delineated list of macro calls, applied in left to right order.
 
 Spacing does not matter:
 - `^mac(a,b){` == ` ^ mac(  a,b )  {`
