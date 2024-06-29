@@ -34,7 +34,6 @@ _C._
 - `^{...}` = align the content center
 - `^demo{...}` = wrap the content in "demo" div
 - `^+(my-class){...}` = add a class to first html child node
-- `^img(src,alt,width){...}` = create an image element
 - `^fig(src,alt,caption){...}` = create a figure with caption.
 - anything that can be done in JS!
 
