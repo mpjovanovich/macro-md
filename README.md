@@ -90,7 +90,7 @@ export async function parse(
 - The macro file may be any file that can be loaded with the JavaScript's global `import` function.
 - Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro. The user may use the exported `MACRO_IDENTIFIER` constant, or simply provide a string literal - we won't tell anyone ;)
 - These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
-- Additional arguments for user defined macros are optional.
+- Additional arguments supplied to user defined macros are optional.
 
 ## Usage Example
 
