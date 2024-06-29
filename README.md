@@ -54,10 +54,10 @@ C.
 - ` ``mac(\*a){ ` = macro with indefinite array argument
 - ` ``mac1 mac2(80){ ` = space delineated list of macro calls to be applied in left to right order.
 
-\*Spacing does not matter:
+Spacing does not matter:
 - ` ``mac(a,b){ ` == ` mac(  a,b )  { `
 
-\*Casing does matter.
+Casing does matter.
 - ` ``mac(a,b){ ` != `Mac(a,b){ `
 
 ### Nested Macros
@@ -70,7 +70,7 @@ When the parser encounters an opening curly brace for the macro content it will 
 
 ### Inline vs Block Macros
 
-... TODO ...
+Because `macro-md` is a markdown post-processor, the content supplied to the macros is processed markdown. The context of a macro determines whether the returned is treated as inline or block content. A Macro that is preceded and followed by a line break is a block level macro. Anything else is an inline macro.
 
 ### Usage Example
 
