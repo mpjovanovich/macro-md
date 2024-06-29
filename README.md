@@ -26,7 +26,17 @@ C.
 }
 ```
 
-... we first compile the markdown inside of the curly braces then pass the resulting HTML to a user defined macro identified by "demo". The user defined macro may manipulate this content.
+... we first compile the markdown inside of the curly braces then pass the resulting HTML to a user defined macro identified by "demo". The user defined macro may then manipulate this content.
+
+## Use Cases
+
+- ` ``insertDynamicStuff{} ` = insert some dynamic content
+- ` ``^{...} ` = align the content center
+- ` ``demo{...} ` = wrap the content in "demo" div
+- ` ``+(my-class){...} ` = add a class to first html child node
+- ` ``img(src,alt,width){...} ` = create an image element
+- ` ``fig(src,alt,caption){...} ` = create a figure with caption.
+- anything that can be done in JS!
 
 ## Syntax
 
@@ -50,36 +60,19 @@ C.
 \*Casing does matter.
 - ` ``mac(a,b){ ` != `Mac(a,b){ `
 
-## Examples 
+### Nested Macros
 
-### Use Cases
+Macros may be nested, allowing for modular design:
 
-- ` ``insertDynamicStuff{} ` = insert some dynamic content
-- ` ``^{...} ` = align the content center
-- ` ``demo{...} ` = wrap the content in "demo" div
-- ` ``+(my-class){...} ` = add a class to first html child node
-- ` ``img(src,alt,width){...} ` = create an image element
-- ` ``fig(src,alt,caption){...} ` = create a figure with caption.
-- anything that can be done in JS!
+... TODO example...
 
-## API
+When the parser encounters an opening curly brace for the macro content it will then search for a corresponding closing curly brace, ignoring any pairs encountered along the way. If no closing brace is found a xxxx error is thrown.
 
-`macro-md` defines a single public entry point:
+### Inline vs Block Macros
 
-```typescript
-export async function parse(
-  markdownPath: string,
-  macroPath: string,
-  macroDelimiter: string
-): Promise<string> {
-```
+... TODO ...
 
-## Macro File Format
-
-- The macro file may be any file that can be loaded with the JavaScript's global `import` function.
-- Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro. The user may use the exported `MACRO_IDENTIFIER` constant, or simply provide a string literal - we won't tell anyone ;)
-- These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
-- Additional arguments for user defined macros are optional.
+### Usage Example
 
 _Example Macro Definition_
 
@@ -107,13 +100,26 @@ _Result_
 <p>I'm wrapped block content</p>
 ```
 
-## Nested Macros
+## API
 
-Macros may be nested, allowing for modular design:
+### `parse` Function
 
-TODO: example
+`macro-md` defines a single public entry point:
 
-When the parser encounters an opening curly brace for the macro content it will then search for a corresponding closing curly brace, ignoring any pairs encountered along the way. If no closing brace is found a xxxx error is thrown.
+```typescript
+export async function parse(
+  markdownPath: string,
+  macroPath: string,
+  macroDelimiter: string
+): Promise<string> {
+```
+
+### Macro File Format
+
+- The macro file may be any file that can be loaded with the JavaScript's global `import` function.
+- Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro. The user may use the exported `MACRO_IDENTIFIER` constant, or simply provide a string literal - we won't tell anyone ;)
+- These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
+- Additional arguments for user defined macros are optional.
 
 ## Issue Reporting
 
