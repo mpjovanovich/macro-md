@@ -6,6 +6,11 @@
   "type": "module",
   "version": "0.1.0",
   "main": "dist/index.js",
+  "files": [
+    "/dist",
+    "/LICENSE.md",
+    "/README.md"
+  ],
   "homepage": "https://github.com/mpjovanovich/macro-md#readme",
   "repository": {
     "type": "git",
