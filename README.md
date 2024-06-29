@@ -98,7 +98,7 @@ export async function parse(
 _API Call_
 
 ```javascript
-import { parse } from macro-md;
+import { parse } from 'macro-md';
 
 const processedMarkdown = await parse(
   '/path/to/markdown.md',
