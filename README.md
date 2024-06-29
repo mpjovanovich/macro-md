@@ -99,7 +99,7 @@ const processedMarkdown = await parse(
   '/path/to/markdown.md',
   '/path/to/macros.js',
   '^'
-)
+);
 ```
 
 _Macro Definition_
