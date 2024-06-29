@@ -132,7 +132,7 @@ _Result_
 ```html
 <p>This is some !wrapped inline! content.</p>
 
-<p>I'm wrapped block content</p>
+!<p>I'm wrapped block content</p>!
 ```
 
 ## Issue Reporting
