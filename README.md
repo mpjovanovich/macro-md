@@ -2,7 +2,7 @@
 
 ## Description
 
-macro-md is a markdown post-processor that allows users to embed macros into a markdown document. These macros are simply JavaScript functions that are evaluated after the initial markdown compilation.
+`macro-md` is a markdown post-processor that allows users to embed macros into a markdown document. These macros are simply JavaScript functions that are evaluated after the initial markdown compilation.
 
 ## Motivation
 
@@ -10,7 +10,7 @@ Traditional markdown provides a way to rapidly create web content using a succin
 
 Moreover, markdown offers no way to set HTML attributes that may be used in conjunction with CSS to style elements or in conjunction with scripts to identify elements.
 
-macro-md seeks to extend the capabilities of vanilla markdown by providing a lightweight flexible text transformation tool that may be used along with the markdown compilation process.
+`macro-md` seeks to extend the capabilities of vanilla markdown by providing a lightweight flexible text transformation tool that may be used along with the markdown compilation process.
 
 ## How it Works
 
