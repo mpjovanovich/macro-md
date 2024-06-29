@@ -136,14 +136,11 @@ _Result_
 
 ## Issue Reporting
 
-...todo...
+Issues may be reported on the [GitHub Issues](https://github.com/mpjovanovich/macro-md/issues) page.
 
 ## Links and References
 
-- Markdown spec: https://commonmark.org/
-
-- Markdown tester: https://spec.commonmark.org/dingus/
-
-- markedjs package source: https://github.com/markedjs/marked
-
-- markedjs highlighting package source: https://github.com/markedjs/marked-highlight
+- [Markdown spec](https://commonmark.org/)
+- [Markdown tester](https://spec.commonmark.org/dingus/)
+- [markedjs package source](https://github.com/markedjs/marked)
+- [markedjs highlighting package source](https://github.com/markedjs/marked-highlight)
