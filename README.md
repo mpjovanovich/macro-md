@@ -122,7 +122,9 @@ _Macro Call_
 This is some ^wrap(!){wrapped inline} content.
 
 ^wrap(!){
+
 I'm wrapped block content
+
 }
 ```
 _Result_
