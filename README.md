@@ -18,17 +18,15 @@ Given the following...
 
 ```markdown
 ``demo{
-
 # A
 
 B **some text**.
 
 C.
-
 }
 ```
 
-... we first compile the markdown inside of the curly braces then pass it to a user defined macro identified by "demo". The user defined macro may return any string.
+... we first compile the markdown inside of the curly braces then pass the resulting HTML to a user defined macro identified by "demo". The user defined macro may manipulate this content.
 
 ## Syntax
 
@@ -41,10 +39,10 @@ C.
 
 ### Macro Formats:
 
-- ``mac{ = macro with no args
-- ``mac(a,b){ = macro with args
-- ``mac(\*a){ = macro with indefinite array argument
-- ``mac1 mac2(80){ = space delineated list of macro calls to be applied in left to right order.
+- ` ``mac{ ` = macro with no args
+- ` ``mac(a,b){ ` = macro with args
+- ` ``mac(\*a){ ` = macro with indefinite array argument
+- ` ``mac1 mac2(80){ ` = space delineated list of macro calls to be applied in left to right order.
 
 \*Spacing does not matter:
 - ` ``mac(a,b){ ` == ` mac(  a,b )  { `
@@ -56,19 +54,12 @@ C.
 
 ### Use Cases
 
-- Add CSS class to elements by modifying the class attribute
-- Add id attributes to elements for use with scripts
-- Wrap several elements in a container element
-- Transform a text node
-
-### Macro Formats
-
-- ``head{} = "include" macro to insert some header content
-- ``^{...} = align center
-- ``demo{...} = wrap content in "demo" div
-- ``+(my-class){...} = add class passed in as arg to macro, "my-class"
-- ``img(src,alt,width){...} = create image element
-- ``fig(src,alt,caption){...} = create a figure with caption.
+- ` ``insertDynamicStuff{} ` = insert some dynamic content
+- ` ``^{...} ` = align the content center
+- ` ``demo{...} ` = wrap the content in "demo" div
+- ` ``+(my-class){...} ` = add a class to first html child node
+- ` ``img(src,alt,width){...} ` = create an image element
+- ` ``fig(src,alt,caption){...} ` = create a figure with caption.
 - anything that can be done in JS!
 
 ## API
@@ -86,7 +77,7 @@ export async function parse(
 ## Macro File Format
 
 - The macro file may be any file that can be loaded with the JavaScript's global `import` function.
-- Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro.
+- Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro. The user may use the exported `MACRO_IDENTIFIER` constant, or simply provide a string literal - we won't tell anyone ;)
 - These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
 - Additional arguments for user defined macros are optional.
 
@@ -102,12 +93,18 @@ wrap[MACRO_IDENTIFIER] = "wrap";
 _Macro Call_
 
 ```markdown
-This is some ``wrap(!){wrapped} content.
+This is some ``wrap(!){wrapped inline} content.
+
+``wrap(!){
+I'm wrapped block content
+}
 ```
 _Result_
 
 ```html
-<p>This is some ``wrap(!){wrapped} content.</p>
+<p>This is some !wrapped inline! content.</p>
+
+<p>I'm wrapped block content</p>
 ```
 
 ## Nested Macros
