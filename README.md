@@ -28,7 +28,7 @@ C.
 }
 ```
 
-... we first compile the markdown inside of the curly braces, optionally running it through a highlighter after this, then pass it to a user defined macro identified by "demo" to transform the HTML output.
+... we first compile the markdown inside of the curly braces then pass it to a user defined macro identified by "demo" to transform the HTML output.
 
 ## Syntax
 
