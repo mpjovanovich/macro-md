@@ -63,9 +63,9 @@ Casing does matter.
 
 Macros may be nested, allowing for modular design:
 
-... TODO example...
-
-When the parser encounters an opening curly brace for the macro content it will then search for a corresponding closing curly brace, ignoring any pairs encountered along the way. If no closing brace is found a xxxx error is thrown.
+```markdown
+^first{ Do ^second{some} stuff. }
+```
 
 ### Inline vs Block Macros
 
