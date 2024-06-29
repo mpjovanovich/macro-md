@@ -8,13 +8,11 @@
 
 Traditional markdown provides a way to rapidly create web content using a succinct and readable syntax. By design, authors are limited to only those HTML constructs that markdown is capable of producing.
 
-Moreover, markdown offers no way to set HTML attributes that may be used in conjunction with CSS to style elements or in conjunction with scripts to identify elements.
+Moreover, markdown offers no way to set HTML attributes that may be used in conjunction with CSS or scripts to identify elements.
 
-`macro-md` seeks to extend the capabilities of vanilla markdown by providing a lightweight flexible text transformation tool that may be used along with the markdown compilation process.
+`macro-md` seeks to extend the capabilities of vanilla markdown by providing a lightweight flexible text-transformation tool that is integrated with the markdown compilation process.
 
-## How it Works
-
-Given the following...
+Macros may be embedded into the markdown using the provided syntax (more below). The compiled markdown will then be passed to the macro:
 
 ```markdown
 ``demo{
@@ -25,8 +23,6 @@ B **some text**.
 _C._
 }
 ```
-
-... we first compile the markdown inside of the curly braces then pass the resulting HTML to a user defined macro identified by "demo". The user defined macro may then manipulate this content.
 
 ## Use Cases
 
@@ -69,7 +65,7 @@ Macros may be nested, allowing for modular design:
 
 ### Inline vs Block Macros
 
-Because `macro-md` is a markdown post-processor, the content supplied to the macros is processed markdown. The context of a macro determines whether the returned is treated as inline or block content. A Macro that is preceded and followed by a line break is a block level macro. Anything else is an inline macro.
+`macro-md` is a markdown post-processor, so content supplied to the macros is HTML. The context of a macro determines whether the returned is treated as inline or block content. A Macro that is preceded and followed by a line break is a block level macro. Anything else is an inline macro.
 
 ## API
 
