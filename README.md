@@ -102,9 +102,9 @@ _Result_
 
 ## API
 
-### `parse` Function
+### Functions
 
-`macro-md` defines a single public entry point:
+`macro-md` defines a single public entry point - the `parse` function:
 
 ```typescript
 export async function parse(
