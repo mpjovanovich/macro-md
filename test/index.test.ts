@@ -245,7 +245,7 @@ const testCases: {
     ]),
   },
 
-  // SINGLE ARGUMENT
+  // ARGUMENTS
   {
     description: "inline macro, single argument, no spacing",
     markdown: "start ^testWithArgument(arg1){content} end",
@@ -280,6 +280,57 @@ const testCases: {
       ],
     ]),
   },
+
+  // MULTIPLE MACROS
+  {
+    description: "multiple macros - inline",
+    markdown: "start ^testNoArguments testWithArgument(arg1){content} end",
+    embedded: `start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end`,
+    parsedMarkdown: `<p>start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end</p>\n`,
+    removedBlock: `<p>start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end</p>\n`,
+    processedOutput: `<p>start TNA_start_TWA_start_content arg1_TWA_end_TNA_end end</p>\n`,
+    placeholders: new Map<string, MacroCall>([
+      [
+        "GUID_0",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+      [
+        "GUID_1",
+        {
+          macro: testWithArgument,
+          args: ["arg1"],
+        },
+      ],
+    ]),
+  },
+  {
+    description: "multiple macros - block",
+    markdown: "^testNoArguments testWithArgument(arg1){content}",
+    embedded: `${GUID}_0\n\n${GUID}_1\n\ncontent\n\n${GUID}_1\n\n${GUID}_0\n`,
+    parsedMarkdown: `<p>${GUID}_0</p>\n<p>${GUID}_1</p>\n<p>content</p>\n<p>${GUID}_1</p>\n<p>${GUID}_0</p>\n`,
+    removedBlock: `${GUID}_0\n${GUID}_1\n<p>content</p>\n${GUID}_1\n${GUID}_0\n`,
+    processedOutput: `TNA_start_TWA_start_<p>content</p> arg1_TWA_end_TNA_end\n`,
+    placeholders: new Map<string, MacroCall>([
+      [
+        "GUID_0",
+        {
+          macro: testNoArguments,
+          args: [],
+        },
+      ],
+      [
+        "GUID_1",
+        {
+          macro: testWithArgument,
+          args: ["arg1"],
+        },
+      ],
+    ]),
+  },
+  // TODO: Block test...
 ];
 
 /* **************************************************
@@ -317,10 +368,7 @@ function getMacros(): Map<string, MacroFunction> {
 
 function getMacroRegex(): RegExp {
   const escapedMacroDelimiter = escapeRegExp(MACRO_DELIMITER);
-  const macroRegex = new RegExp(
-    `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
-    "g"
-  );
+  const macroRegex = new RegExp(`${escapedMacroDelimiter}(.*?)\\{`, "g");
   return macroRegex;
 }
 
@@ -421,7 +469,5 @@ No args:
 - Multiple macros same content
 
 Args
-- Single args
 - Indefinite args
-- Multiple macros with args same content
 */

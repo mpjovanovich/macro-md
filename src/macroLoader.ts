@@ -19,10 +19,7 @@ export async function parse(
   macroDelimiter: string
 ): Promise<string> {
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
-  const macroRegex = new RegExp(
-    `${escapedMacroDelimiter}\\s*(\\S+?)\\s*(?:\\((.*?)\\))?\\s*\\{`,
-    "g"
-  );
+  const macroRegex = new RegExp(`${escapedMacroDelimiter}(.*?)\\{`, "g");
   const guid = `macro_md_${Date.now().toString()}`;
   let placeholders = new Map<string, MacroCall>();
 
@@ -30,6 +27,7 @@ export async function parse(
   const macros = await loadMacros(macroPath, (path) => import(path));
 
   // Process markdown. Each step transforms the markdown.
+  // Get raw markdown contents
   let markdown = await loadMarkdown(markdownPath);
 
   // Remove starting and trailing spaces from lines
@@ -119,23 +117,34 @@ export function embedTokens(
   let match = macroRegex.exec(markdown);
   while (match) {
     // Make sure that the macro was defined by the user.
-    const macro = match[1];
-    const argsList = match[2];
+    const macroList = match[1];
+    const placeHolderList: string[] = [];
 
-    const macroFunction = macros.get(macro);
-    if (!macroFunction) {
-      throw new Error(`Macro not found: ${macro}`);
+    // There may be one to many macro calls within the current match.
+    // The subRegex below will capture the names and arguments.
+    const subRegex = /\s*(\w+)\s*(?:\(\s*(.*?)\s*\))?/g;
+    let submatch = subRegex.exec(macroList);
+    while (submatch) {
+      let macro = submatch[1];
+      let argsList = submatch[2];
+
+      const macroFunction = macros.get(macro);
+      if (!macroFunction) {
+        throw new Error(`Macro not found: ${macro}`);
+      }
+
+      let childArgs = argsList ? argsList.split(",") : [];
+      childArgs = childArgs.map((arg) => arg.trim());
+
+      const macroPlaceholder = `${macroGuid}_${macroIndex.index}`;
+      placeholders.set(macroPlaceholder, {
+        macro: macroFunction,
+        args: childArgs,
+      });
+      placeHolderList.push(macroPlaceholder);
+      macroIndex.index++;
+      submatch = subRegex.exec(macroList);
     }
-
-    let childArgs = argsList ? argsList.split(",") : [];
-    childArgs = childArgs.map((arg) => arg.trim());
-
-    const macroPlaceholder = `${macroGuid}_${macroIndex.index}`;
-    placeholders.set(macroPlaceholder, {
-      macro: macroFunction,
-      args: childArgs,
-    });
-    macroIndex.index++;
 
     const { start, end } = getMacroContent(markdown, macroRegex, match);
     const macroContent = markdown.substring(start, end);
@@ -169,17 +178,25 @@ export function embedTokens(
       // macro tags will wrap the html rather than be inline.
       markdown = markdown.replace(
         match[0] + macroContent + "}",
-        `${macroPlaceholder}\n\n${innerMarkdown}\n\n${macroPlaceholder}\n`
+
+        // We process the series of macro calls from inner to outer, as most programming languages do, so wrap placeholders in that order.
+        `${placeHolderList.join(
+          "\n\n"
+        )}\n\n${innerMarkdown}\n\n${placeHolderList.reverse().join("\n\n")}\n`
       );
     } else {
-      // We pad each side with a space so that it works in the case that there is
-      // markdown syntax touching the curly braces. The markdown parser would not
-      // recognize the inner content as markdown otherwise. E.g.:
-      // ^macro{**bold**} would not render the bold.  These are trimmed away in
-      // the processMacro function.
+      //   We pad each side with a space so that it works in the case that there is
+      //   markdown syntax touching the curly braces. The markdown parser would not
+      //   recognize the inner content as markdown otherwise. E.g.: ^macro{**bold**}
+      //   would not render the bold.  These are trimmed away in the processMacro
+      //   function.
       markdown = markdown.replace(
         match[0] + macroContent + "}",
-        `${macroPlaceholder} ${innerMarkdown} ${macroPlaceholder}`
+
+        // We process the series of macro calls from inner to outer, as most programming languages do, so wrap placeholders in that order.
+        `${placeHolderList.join(" ")} ${innerMarkdown} ${placeHolderList
+          .reverse()
+          .join(" ")}`
       );
     }
 
