@@ -158,11 +158,7 @@ Types of algorithms:
 
 ### Classification
 
-<figure>
-    <span>
-        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*bhFifratH9DjKqMBTeQG5A.gif" style="width: 60%;">
-    </span>
-</figure>
+^fig(neural network,60){https://miro.medium.com/v2/resize:fit:720/format:webp/1*bhFifratH9DjKqMBTeQG5A.gif}
 
 "How do we categorize items from a set of data?"
 
@@ -193,11 +189,7 @@ Types of algorithms:
 
 ### Data Mining
 
-<figure>
-    <span>
-        <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*psbhLB_qOFm7UdeYZoLgeA.gif" style="">
-    </span>
-</figure>
+^fig{https://miro.medium.com/v2/resize:fit:640/format:webp/1*psbhLB_qOFm7UdeYZoLgeA.gif}
 
 "How do we find patterns in a set of data?"
 
