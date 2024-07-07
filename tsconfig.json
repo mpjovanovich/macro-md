@@ -3,10 +3,11 @@
     "target": "esnext",
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "declaration": true,
     "strict": true,
     "esModuleInterop": true,
     "noEmit": false,
-    "sourceMap": true, // for debugging
+    "sourceMap": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",

@@ -8,7 +8,7 @@ import {
   processMacro,
   removeTokenWrappers,
   parse,
-} from "./macroLoader.js";
+} from ".../dist/macroLoader.js";
 import { marked } from "marked";
 import pretty from "pretty";
 import fs from "fs";

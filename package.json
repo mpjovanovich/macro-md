@@ -6,11 +6,6 @@
   "type": "module",
   "version": "0.1.0",
   "main": "dist/index.js",
-  "files": [
-    "/dist",
-    "/LICENSE.md",
-    "/README.md"
-  ],
   "homepage": "https://github.com/mpjovanovich/macro-md#readme",
   "repository": {
     "type": "git",
@@ -22,14 +17,18 @@
     "macro",
     "html"
   ],
+  "files": [
+    "/dist",
+    "/LICENSE.md",
+    "/README.md"
+  ],
   "bugs": {
     "url": "https://github.com/mpjovanovich/macro-md/issues"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "start": "npm run build && node dist/index.js",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "quicktest": "npm run build && node dist/test.js"
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
