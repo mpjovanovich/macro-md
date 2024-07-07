@@ -205,6 +205,8 @@ Types of algorithms:
 - Principal component analysis (PCA)
 - K-means clustering
 
-<p class="demo">Demo:</p>
+^demo{
 
 https://github.com/mpjovanovich/k-means_plus_plus
+
+}

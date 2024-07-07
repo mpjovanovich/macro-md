@@ -21,9 +21,8 @@ export function wrap(content, wrapper) {
 }
 wrap[MACRO_IDENTIFIER] = "wrap";
 
-export function wrapHtml(content, wrapper) {
-  const wrapperTag = wrapper.replace("<", "").replace(">", "").split(" ")[0];
-  const html = `${wrapper}${content}</${wrapperTag}>`;
+export function wrapHtml(content, wrapperElement, classList = "") {
+  const html = `<${wrapperElement} class=${classList}>${content}</${wrapperElement}>`;
   return html;
 }
 wrapHtml[MACRO_IDENTIFIER] = "wrapHtml";
@@ -51,6 +50,13 @@ export function addAttribute(content, attributeName, attributeValue) {
   return serialize(fragment);
 }
 addAttribute[MACRO_IDENTIFIER] = "addAttribute";
+
+export function demo(content) {
+  content = '<p class="focusContentTitle">Demo:<p>\n\n' + content;
+  content = wrapHtml(content, "div", "focusContent");
+  return content;
+}
+demo[MACRO_IDENTIFIER] = "demo";
 
 export function head(content) {
   return `<head>

@@ -22,8 +22,8 @@ const macroPath = "/home/mpjovanovich/git/macro-md/test/macro/testMacro.js";
 const markdownPath = "/home/mpjovanovich/git/macro-md/test/markdown/test.md";
 const outputPath = "/mnt/c/Users/mpjov/Desktop/markdown_test/index.html";
 
-// let markdown = await integrationTest();
-let markdown = await testHarness();
+let markdown = await integrationTest();
+// let markdown = await testHarness();
 
 // Options for pretty
 const options = {
@@ -31,12 +31,12 @@ const options = {
   wrap_line_length: 80,
 };
 markdown = await pretty(markdown, options);
-console.log(markdown);
-// writeHTMLFile();
+// console.log(markdown);
+writeHTMLFile();
 
 async function integrationTest(): Promise<string> {
   // Integration test
-  let markdown = await parse(markdownPath, macroPath, outputPath);
+  let markdown = await parse(markdownPath, macroPath, "^");
   return markdown;
 }
 
@@ -44,7 +44,8 @@ async function testHarness(): Promise<string> {
   //   Pain goes here...
   // let markdown = "start ^wrap (arg1 ) {content} end";
   //   let markdown = "start ^ wrap(aaa) upper {content} end";
-  let markdown = "^upper wrap(aaa){content}";
+  //   let markdown = "^upper wrap(aaa){content}";
+  let markdown = await loadMarkdown(markdownPath);
 
   const macroDelimiter = "^";
   const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
