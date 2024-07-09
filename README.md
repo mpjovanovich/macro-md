@@ -27,7 +27,7 @@ _C._
 ## Use Cases
 
 - `^insertDynamicStuff{}` = insert some dynamic content
-- `^{...}` = align the content center
+- `^C{...}` = align the content center
 - `^demo{...}` = wrap the content in "demo" div
 - `^+(my-class){...}` = add a class to first html child node
 - `^fig(src,alt,caption){...}` = create a figure with caption.
