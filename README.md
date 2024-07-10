@@ -135,7 +135,5 @@ Issues may be reported on the [GitHub Issues](https://github.com/mpjovanovich/ma
 
 ## Links and References
 
-- [Markdown spec](https://commonmark.org/)
-- [Markdown tester](https://spec.commonmark.org/dingus/)
-- [markedjs package source](https://github.com/markedjs/marked)
-- [markedjs highlighting package source](https://github.com/markedjs/marked-highlight)
+- [Marked Demo](https://marked.js.org/demo). Not integrated with macro-md; included here for general markdown orientation.
+- [Marked Source](https://github.com/markedjs/marked). Source code for the excellent markdown parsing library.
