@@ -11,10 +11,23 @@ export type MacroCall = { macro: MacroFunction; args: string[] };
  * ***********************************************************************/
 
 /**
- * This function is the public entry point to process a markdown file.
+ * Public entry point to process markdown file.
  */
-export async function parse(
+export async function parseFile(
   markdownPath: string,
+  macroPath: string,
+  macroDelimiter: string
+): Promise<string> {
+  let markdown = await loadMarkdown(markdownPath);
+  return parseString(markdown, macroPath, macroDelimiter);
+}
+
+/**
+ * Public entry point to process markdown string.
+ */
+export async function parseString(
+  //   markdownPath: string,
+  markdown: string,
   macroPath: string,
   macroDelimiter: string
 ): Promise<string> {
@@ -25,10 +38,6 @@ export async function parse(
 
   // Load the user defined macros and markdown.
   const macros = await loadMacros(macroPath, (path) => import(path));
-
-  // Process markdown. Each step transforms the markdown.
-  // Get raw markdown contents
-  let markdown = await loadMarkdown(markdownPath);
 
   // Remove starting and trailing spaces from lines
   markdown = cleanLineEndings(markdown, escapedMacroDelimiter);

@@ -7,8 +7,9 @@ import {
   loadMarkdown,
   processMacro,
   removeTokenWrappers,
-  parse,
-} from ".../dist/macroLoader.js";
+  parseFile,
+  parseString,
+} from "../dist/macroLoader.js";
 import { marked } from "marked";
 import pretty from "pretty";
 import fs from "fs";
@@ -36,7 +37,7 @@ writeHTMLFile();
 
 async function integrationTest(): Promise<string> {
   // Integration test
-  let markdown = await parse(markdownPath, macroPath, "^");
+  let markdown = await parseFile(markdownPath, macroPath, "^");
   return markdown;
 }
 
