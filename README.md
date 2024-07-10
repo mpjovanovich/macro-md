@@ -1,5 +1,25 @@
 # macro-md
 
+## Table of Contents
+
+- [macro-md](#macro-md)
+  - [Table of Contents](#table-of-contents)
+  - [Description](#description)
+  - [Motivation](#motivation)
+  - [Installation](#installation)
+  - [Example Usage](#example-usage)
+  - [Use Cases](#use-cases)
+  - [Syntax](#syntax)
+    - [Macro Parts:](#macro-parts)
+    - [Macro Formats:](#macro-formats)
+    - [Nested Macros](#nested-macros)
+    - [Inline vs Block Macros](#inline-vs-block-macros)
+  - [API](#api)
+    - [Functions](#functions)
+    - [Macro File Format](#macro-file-format)
+  - [Issue Reporting](#issue-reporting)
+  - [Links and References](#links-and-references)
+
 ## Description
 
 `macro-md` is a markdown post-processor that allows users to embed macros into a markdown document. These macros are simply JavaScript functions that are evaluated after the initial markdown compilation.
@@ -8,20 +28,61 @@
 
 Traditional markdown provides a way to rapidly create web content using a succinct and readable syntax. By design, authors are limited to only those HTML constructs that markdown is capable of producing.
 
-Moreover, markdown offers no way to set HTML attributes that may be used in conjunction with CSS or scripts to identify elements.
-
 `macro-md` seeks to extend the capabilities of vanilla markdown by providing a lightweight flexible text-transformation tool that is integrated with the markdown compilation process.
 
-Macros may be embedded into the markdown using the provided syntax (more below). The compiled markdown will then be passed to the macro:
+Macros may be embedded into the markdown using the provided syntax. The compiled markdown will then be passed to the macro:
+
+## Installation
+
+`macro-md` is available as an npm package. To install, run:
+
+```bash
+npm install macro-md
+```
+
+## Example Usage
+
+_API Call_
+
+```javascript
+import { parseFile } from "macro-md";
+
+const processedMarkdown = await parse(
+  "/path/to/markdown.md",
+  "/path/to/macros.js",
+  "^"
+);
+```
+
+_Macro Definition_
+
+```javascript
+export function wrap(content, wrapper) {
+  return `${wrapper}${content}${wrapper}`;
+}
+wrap[MACRO_IDENTIFIER] = "wrap";
+```
+
+_Macro Call_
 
 ```markdown
-``demo{
-# A
+This is some wrapped ^wrap(!){_inline_} content.
 
-B **some text**.
+^wrap(!){
 
-_C._
+I'm wrapped **block** content
+
 }
+```
+
+_Result_
+
+```html
+<p>This is some wrapped !<em>inline</em>! content.</p>
+
+!
+<p>I'm wrapped <strong>block</strong> content</p>
+!
 ```
 
 ## Use Cases
@@ -49,9 +110,11 @@ _C._
 - `^mac1 mac2(80){` = space delineated list of macro calls, applied in innermost to outermost order; `mac2` before `mac1`.
 
 Spacing does not matter:
+
 - `^mac(a,b){` == ` ^ mac(  a,b )  {`
 
 Casing does matter.
+
 - `^mac(a,b){` != `^Mac(a,b){`
 
 ### Nested Macros
@@ -70,11 +133,19 @@ Macros may be nested, allowing for modular design:
 
 ### Functions
 
-`macro-md` defines a single public entry point - the `parse` function:
+`macro-md` defines two public entry points - the `parseFile` and `parseString` functions:
 
 ```typescript
-export async function parse(
+export async function parseFile(
   markdownPath: string,
+  macroPath: string,
+  macroDelimiter: string
+): Promise<string> {
+```
+
+```typescript
+export async function parseString(
+  markdown: string,
   macroPath: string,
   macroDelimiter: string
 ): Promise<string> {
@@ -86,48 +157,6 @@ export async function parse(
 - Functions that are to be used as macros must have a "macroIdentifier" property assigned to them. This serves as a link to the identifier for the macro. The user may use the exported `MACRO_IDENTIFIER` constant, or simply provide a string literal - we won't tell anyone ;)
 - These functions must take a string as the first parameter. `macro-md` will always pass the content that is wrapped in curly braces into this argument. Whether to use this argument is up to the user.
 - Additional arguments supplied to user defined macros are optional.
-
-## Usage Example
-
-_API Call_
-
-```javascript
-import { parse } from 'macro-md';
-
-const processedMarkdown = await parse(
-  '/path/to/markdown.md',
-  '/path/to/macros.js',
-  '^'
-);
-```
-
-_Macro Definition_
-
-```javascript
-export function wrap(content, wrapper) {
-  return `${wrapper}${content}${wrapper}`;
-}
-wrap[MACRO_IDENTIFIER] = "wrap";
-```
-
-_Macro Call_
-
-```markdown
-This is some ^wrap(!){wrapped inline} content.
-
-^wrap(!){
-
-I'm wrapped block content
-
-}
-```
-_Result_
-
-```html
-<p>This is some !wrapped inline! content.</p>
-
-!<p>I'm wrapped block content</p>!
-```
 
 ## Issue Reporting
 

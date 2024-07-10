@@ -47,6 +47,15 @@ export async function parseString(
     index: 0,
   });
 
+  // TODO: this will need moved to an option in case user's don't want it.
+  // Override the heading render method to include GitHub style IDs
+  const renderer = new marked.Renderer();
+  renderer.heading = function ({ text, depth }) {
+    const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
+    return `<h${depth}><a name="${escapedText}" class="anchor" href="#${escapedText}"><span class="header-link"></span></a>${text}</h${depth}>`;
+  };
+  marked.setOptions({ renderer: renderer });
+
   // Convert the embedded markdown to HTML
   markdown = await marked.parse(markdown);
 
