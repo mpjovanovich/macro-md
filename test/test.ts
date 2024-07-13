@@ -11,7 +11,6 @@ import {
   parseString,
 } from "../dist/macroLoader.js";
 import { marked } from "marked";
-import pretty from "pretty";
 import fs from "fs";
 
 // This is a sandbox file for debugging. It is not part of the main project.
@@ -26,18 +25,15 @@ const outputPath = "/mnt/c/Users/mpjov/Desktop/markdown_test/index.html";
 let markdown = await integrationTest();
 // let markdown = await testHarness();
 
-// Options for pretty
-const options = {
-  ocd: true,
-  wrap_line_length: 80,
-};
-markdown = await pretty(markdown, options);
+// markdown = await pretty(markdown, options);
 // console.log(markdown);
 writeHTMLFile();
 
 async function integrationTest(): Promise<string> {
   // Integration test
-  let markdown = await parseFile(markdownPath, macroPath, "^");
+  let markdown = await parseFile(markdownPath, macroPath, {
+    useGitHubStyleIds: true,
+  });
   return markdown;
 }
 

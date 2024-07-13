@@ -4,7 +4,7 @@ import { marked } from "marked";
 export const MACRO_IDENTIFIER = "macroIdentifier";
 export type MacroFunction = (...args: string[]) => string;
 export type MacroCall = { macro: MacroFunction; args: string[] };
-export interface Options {
+export interface MacroMDOptions {
   macroDelimiter: string;
   useGitHubStyleIds: boolean;
 }
@@ -13,9 +13,9 @@ export interface Options {
  * PUBLIC FUNCTIONS
  * ***********************************************************************/
 
-const defaultOptions: Options = {
+const defaultOptions: MacroMDOptions = {
   macroDelimiter: "^",
-  useGitHubStyleIds: true,
+  useGitHubStyleIds: false,
 };
 
 /**
@@ -24,10 +24,11 @@ const defaultOptions: Options = {
 export async function parseFile(
   markdownPath: string,
   macroPath: string,
-  options: Options = defaultOptions
+  options: Partial<MacroMDOptions> = defaultOptions
 ): Promise<string> {
+  const setOptions = { ...defaultOptions, ...options };
   let markdown = await loadMarkdown(markdownPath);
-  return parseString(markdown, macroPath, options);
+  return parseString(markdown, macroPath, setOptions);
 }
 
 /**
@@ -37,9 +38,10 @@ export async function parseString(
   //   markdownPath: string,
   markdown: string,
   macroPath: string,
-  options: Options = defaultOptions
+  options: Partial<MacroMDOptions> = defaultOptions
 ): Promise<string> {
-  const escapedMacroDelimiter = escapeRegExp(options.macroDelimiter);
+  const setOptions: MacroMDOptions = { ...defaultOptions, ...options };
+  const escapedMacroDelimiter = escapeRegExp(setOptions.macroDelimiter);
   const macroRegex = new RegExp(`${escapedMacroDelimiter}(.*?)\\{`, "g");
   const guid = `macro_md_${Date.now().toString()}`;
   let placeholders = new Map<string, MacroCall>();
@@ -55,18 +57,8 @@ export async function parseString(
     index: 0,
   });
 
-  if (options.useGitHubStyleIds) {
-    // Override the heading render method to include GitHub style IDs
-    const renderer = new marked.Renderer();
-    renderer.heading = function ({ text, depth }) {
-      const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
-      return `<h${depth}><a name="${escapedText}" class="anchor" href="#${escapedText}"><span class="header-link"></span></a>${text}</h${depth}>`;
-    };
-    marked.setOptions({ renderer: renderer });
-  }
-
   // Convert the embedded markdown to HTML
-  markdown = await marked.parse(markdown);
+  markdown = await parseMarkdown(markdown, setOptions.useGitHubStyleIds);
 
   // Get rid of extraneous <p> tags from markdown compilation
   markdown = removeTokenWrappers(markdown, guid);
@@ -340,6 +332,26 @@ export async function loadMarkdown(markdownPath: string): Promise<string> {
     throw new Error(`Macro file does not exist: ${markdownPath}`);
   }
   return fs.readFile(markdownPath, "utf8");
+}
+
+export async function parseMarkdown(
+  markdown: string,
+  useGitHubStyleIds: boolean
+): Promise<string> {
+  if (useGitHubStyleIds) {
+    // Override the heading render method to include GitHub style IDs
+    const renderer = new marked.Renderer();
+    renderer.heading = function ({ text, depth }) {
+      const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
+      return `<h${depth} id="${escapedText}">${text}</h${depth}>\n`;
+    };
+    marked.setOptions({ renderer: renderer });
+  }
+
+  // Convert the embedded markdown to HTML
+  markdown = await marked.parse(markdown);
+
+  return markdown;
 }
 
 /**

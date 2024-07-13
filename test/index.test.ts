@@ -6,6 +6,7 @@ import {
   escapeRegExp,
   embedTokens,
   loadMacros,
+  parseMarkdown,
   processMacro,
   removeTokenWrappers,
 } from "../src/macroLoader";
@@ -464,10 +465,49 @@ describe("processMacro", () => {
   );
 });
 
-/* TODO:
-No args:
-- Multiple macros same content
+describe("MacroMDOptions", () => {
+  describe("parseString with custom macroDelimiter", () => {
+    let result_placeholders: Map<string, MacroCall>;
 
-Args
+    beforeEach(() => {
+      result_placeholders = new Map();
+    });
+
+    it("processes markdown string using custom macroDelimiter", async () => {
+      let markdown = "start %testNoArguments{content} end";
+      const macroDelimiter = "%";
+      const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
+      const macroRegex = new RegExp(`${escapedMacroDelimiter}(.*?)\\{`, "g");
+      const expected = `start ${GUID}_0 content ${GUID}_0 end`;
+
+      const result = embedTokens(
+        markdown,
+        macroRegex,
+        macros,
+        result_placeholders,
+        GUID,
+        { index: 0 }
+      );
+
+      expect(result).toBe(expected);
+    });
+
+    it("does not include ids when useGitHubStyleIds=false", async () => {
+      const markdown = "# Test";
+      const expected = `<h1>Test</h1>\n`;
+      let result = await parseMarkdown(markdown, false);
+      expect(result).toBe(expected);
+    });
+
+    it("includes ids when useGitHubStyleIds=true", async () => {
+      const markdown = "# Test";
+      const expected = `<h1 id="test">Test</h1>\n`;
+      let result = await parseMarkdown(markdown, true);
+      expect(result).toBe(expected);
+    });
+  });
+});
+
+/* TODO:
 - Indefinite args
 */
