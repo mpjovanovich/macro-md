@@ -1,14 +1,22 @@
 import fs from "fs/promises";
 import { marked } from "marked";
-import pretty from "pretty";
 
 export const MACRO_IDENTIFIER = "macroIdentifier";
 export type MacroFunction = (...args: string[]) => string;
 export type MacroCall = { macro: MacroFunction; args: string[] };
+export interface Options {
+  macroDelimiter: string;
+  useGitHubStyleIds: boolean;
+}
 
 /* ************************************************************************
  * PUBLIC FUNCTIONS
  * ***********************************************************************/
+
+const defaultOptions: Options = {
+  macroDelimiter: "^",
+  useGitHubStyleIds: true,
+};
 
 /**
  * Public entry point to process markdown file.
@@ -16,10 +24,10 @@ export type MacroCall = { macro: MacroFunction; args: string[] };
 export async function parseFile(
   markdownPath: string,
   macroPath: string,
-  macroDelimiter: string
+  options: Options = defaultOptions
 ): Promise<string> {
   let markdown = await loadMarkdown(markdownPath);
-  return parseString(markdown, macroPath, macroDelimiter);
+  return parseString(markdown, macroPath, options);
 }
 
 /**
@@ -29,9 +37,9 @@ export async function parseString(
   //   markdownPath: string,
   markdown: string,
   macroPath: string,
-  macroDelimiter: string
+  options: Options = defaultOptions
 ): Promise<string> {
-  const escapedMacroDelimiter = escapeRegExp(macroDelimiter);
+  const escapedMacroDelimiter = escapeRegExp(options.macroDelimiter);
   const macroRegex = new RegExp(`${escapedMacroDelimiter}(.*?)\\{`, "g");
   const guid = `macro_md_${Date.now().toString()}`;
   let placeholders = new Map<string, MacroCall>();
@@ -47,14 +55,15 @@ export async function parseString(
     index: 0,
   });
 
-  // TODO: this will need moved to an option in case user's don't want it.
-  // Override the heading render method to include GitHub style IDs
-  const renderer = new marked.Renderer();
-  renderer.heading = function ({ text, depth }) {
-    const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
-    return `<h${depth}><a name="${escapedText}" class="anchor" href="#${escapedText}"><span class="header-link"></span></a>${text}</h${depth}>`;
-  };
-  marked.setOptions({ renderer: renderer });
+  if (options.useGitHubStyleIds) {
+    // Override the heading render method to include GitHub style IDs
+    const renderer = new marked.Renderer();
+    renderer.heading = function ({ text, depth }) {
+      const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
+      return `<h${depth}><a name="${escapedText}" class="anchor" href="#${escapedText}"><span class="header-link"></span></a>${text}</h${depth}>`;
+    };
+    marked.setOptions({ renderer: renderer });
+  }
 
   // Convert the embedded markdown to HTML
   markdown = await marked.parse(markdown);
@@ -67,13 +76,6 @@ export async function parseString(
 
   // Remove empty <p> tags
   markdown = markdown.replace(/<p>\s*<\/p>/gi, "");
-
-  // Pretty print the HTML
-  const options = {
-    ocd: true,
-    wrap_line_length: 80,
-  };
-  markdown = pretty(markdown, options);
 
   return markdown;
 }
