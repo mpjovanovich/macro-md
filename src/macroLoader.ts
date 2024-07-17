@@ -1,5 +1,7 @@
 import fs from "fs/promises";
-import { marked } from "marked";
+import hljs from "highlightjs";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
 
 export const MACRO_IDENTIFIER = "macroIdentifier";
 export type MacroFunction = (...args: string[]) => string;
@@ -7,6 +9,7 @@ export type MacroCall = { macro: MacroFunction; args: string[] };
 export interface MacroMDOptions {
   macroDelimiter: string;
   useGitHubStyleIds: boolean;
+  useHighlightJS: boolean;
 }
 
 /* ************************************************************************
@@ -16,6 +19,7 @@ export interface MacroMDOptions {
 const defaultOptions: MacroMDOptions = {
   macroDelimiter: "^",
   useGitHubStyleIds: false,
+  useHighlightJS: false,
 };
 
 /**
@@ -58,7 +62,11 @@ export async function parseString(
   });
 
   // Convert the embedded markdown to HTML
-  markdown = await parseMarkdown(markdown, setOptions.useGitHubStyleIds);
+  markdown = await parseMarkdown(
+    markdown,
+    setOptions.useGitHubStyleIds,
+    setOptions.useHighlightJS
+  );
 
   // Get rid of extraneous <p> tags from markdown compilation
   markdown = removeTokenWrappers(markdown, guid);
@@ -336,8 +344,22 @@ export async function loadMarkdown(markdownPath: string): Promise<string> {
 
 export async function parseMarkdown(
   markdown: string,
-  useGitHubStyleIds: boolean
+  useGitHubStyleIds: boolean,
+  useHighlightJS: boolean
 ): Promise<string> {
+  let marked = new Marked();
+  if (useHighlightJS) {
+    const highlightExtension = markedHighlight({
+      async: false,
+      langPrefix: "hljs language-",
+      highlight(code, lang, info) {
+        const language = hljs.getLanguage(lang) ? lang : "plaintext";
+        return hljs.highlight(language, code).value;
+      },
+    });
+    marked = new Marked(highlightExtension);
+  }
+
   if (useGitHubStyleIds) {
     // Override the heading render method to include GitHub style IDs
     const renderer = new marked.Renderer();

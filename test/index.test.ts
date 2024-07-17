@@ -495,14 +495,14 @@ describe("MacroMDOptions", () => {
     it("does not include ids when useGitHubStyleIds=false", async () => {
       const markdown = "# Test";
       const expected = `<h1>Test</h1>\n`;
-      let result = await parseMarkdown(markdown, false);
+      let result = await parseMarkdown(markdown, false, false);
       expect(result).toBe(expected);
     });
 
     it("includes ids when useGitHubStyleIds=true", async () => {
       const markdown = "# Test";
       const expected = `<h1 id="test">Test</h1>\n`;
-      let result = await parseMarkdown(markdown, true);
+      let result = await parseMarkdown(markdown, true, false);
       expect(result).toBe(expected);
     });
   });

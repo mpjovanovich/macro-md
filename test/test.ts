@@ -10,8 +10,11 @@ import {
   parseFile,
   parseString,
 } from "../dist/macroLoader.js";
-import { marked } from "marked";
 import fs from "fs";
+import hljs from "highlightjs";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+// import { marked } from "marked";
 
 // This is a sandbox file for debugging. It is not part of the main project.
 
@@ -25,7 +28,6 @@ const outputPath = "/mnt/c/Users/mpjov/Desktop/markdown_test/index.html";
 let markdown = await integrationTest();
 // let markdown = await testHarness();
 
-// markdown = await pretty(markdown, options);
 // console.log(markdown);
 writeHTMLFile();
 
@@ -33,11 +35,14 @@ async function integrationTest(): Promise<string> {
   // Integration test
   let markdown = await parseFile(markdownPath, macroPath, {
     useGitHubStyleIds: true,
+    useHighlightJS: true,
   });
   return markdown;
 }
 
 async function testHarness(): Promise<string> {
+  const useGitHubStyleIds = true;
+  const useHighlightJS = true;
   //   Pain goes here...
   // let markdown = "start ^wrap (arg1 ) {content} end";
   //   let markdown = "start ^ wrap(aaa) upper {content} end";
@@ -57,6 +62,29 @@ async function testHarness(): Promise<string> {
   markdown = embedTokens(markdown, macroRegex, macros, placeholders, guid, {
     index: 0,
   });
+
+  let marked = new Marked();
+  if (useHighlightJS) {
+    const highlightExtension = markedHighlight({
+      async: false,
+      langPrefix: "hljs language-",
+      highlight(code, lang, info) {
+        const language = hljs.getLanguage(lang) ? lang : "plaintext";
+        return hljs.highlight(language, code).value;
+      },
+    });
+    marked = new Marked(highlightExtension);
+  }
+
+  if (useGitHubStyleIds) {
+    const renderer = new marked.Renderer();
+    renderer.heading = function ({ text, depth }) {
+      const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
+      return `<h${depth} id="${escapedText}">${text}</h${depth}>\n`;
+    };
+    marked.setOptions({ renderer: renderer });
+  }
+
   markdown = await marked.parse(markdown);
   markdown = removeTokenWrappers(markdown, guid);
   markdown = processMacro(markdown, guid, placeholders);
@@ -94,7 +122,7 @@ function writeHTMLFile() {
             href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;1,400;1,700&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="assets/css/style.css">
+        <link rel="stylesheet" href="assets/css/styles.css">
         <link rel="stylesheet" href="assets/css/highlight.css">
     </head>
     <body>
