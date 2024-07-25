@@ -42,48 +42,51 @@ npm install macro-md
 
 ## Example Usage
 
-_API Call_
-
-```javascript
-import { parseFile } from "macro-md";
-
-const processedMarkdown = await parse(
-  "/path/to/markdown.md",
-  "/path/to/macros.js",
-  "^"
-);
-```
-
 _Macro Definition_
 
 ```javascript
+// macro.js
+// Your macros go here.
 export function wrap(content, wrapper) {
   return `${wrapper}${content}${wrapper}`;
 }
 wrap[MACRO_IDENTIFIER] = "wrap";
 ```
 
-_Macro Call_
+_API Call_
 
-```markdown
+```javascript
+import { parseFile } from "macro-md";
+
+// Path to your JavaScript macro file
+const macroFilePath = "./macro.js";
+
+// Example markdown with embedded macro
+const markdown = `
 This is some wrapped ^wrap(!){_inline_} content.
 
 ^wrap(!){
 
 I'm wrapped **block** content
 
-}
+}`;
+
+// macro-md API call
+const html = await parseString(markdown, macroFilePath, {
+  macroDelimiter: "~~",
+  useGitHubStyleIds: true,
+  useHighlightJS: true,
+});
 ```
 
 _Result_
 
+<!-- prettier-ignore-start -->
 ```html
 <p>This is some wrapped !<em>inline</em>! content.</p>
-
-!
-<p>I'm wrapped <strong>block</strong> content</p>
-!
+!<p>I&#39;m wrapped <strong>block</strong> content</p>!
 ```
+<!-- prettier-ignore-end -->
 
 ## Use Cases
 

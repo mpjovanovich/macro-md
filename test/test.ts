@@ -25,11 +25,28 @@ const macroPath = "/home/mpjovanovich/git/macro-md/test/macro/testMacro.js";
 const markdownPath = "/home/mpjovanovich/git/macro-md/test/markdown/test.md";
 const outputPath = "/mnt/c/Users/mpjov/Desktop/markdown_test/index.html";
 
-let markdown = await integrationTest();
+// let markdown = await integrationTest();
 // let markdown = await testHarness();
 
+// TMP
+let markdown = `
+This is some wrapped ^wrap(!){_inline_} content.
+
+^wrap(!){
+
+I'm wrapped **block** content
+
+}`;
+
+const html = await parseString(markdown, macroPath, {
+  macroDelimiter: "^",
+  useGitHubStyleIds: true,
+  useHighlightJS: true,
+});
+console.log(html);
+
 // console.log(markdown);
-writeHTMLFile();
+// writeHTMLFile();
 
 async function integrationTest(): Promise<string> {
   // Integration test
