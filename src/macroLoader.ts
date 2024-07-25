@@ -39,7 +39,6 @@ export async function parseFile(
  * Public entry point to process markdown string.
  */
 export async function parseString(
-  //   markdownPath: string,
   markdown: string,
   macroPath: string,
   options: Partial<MacroMDOptions> = defaultOptions

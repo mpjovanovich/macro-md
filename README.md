@@ -139,7 +139,7 @@ Macros may be nested, allowing for modular design:
 export async function parseFile(
   markdownPath: string,
   macroPath: string,
-  macroDelimiter: string
+  options: Partial<MacroMDOptions> = defaultOptions
 ): Promise<string> {
 ```
 
@@ -147,8 +147,18 @@ export async function parseFile(
 export async function parseString(
   markdown: string,
   macroPath: string,
-  macroDelimiter: string
+  options: Partial<MacroMDOptions> = defaultOptions
 ): Promise<string> {
+```
+
+Additional options may be specified in the `MacroMDOptions` object:
+
+```typescript
+const defaultOptions: MacroMDOptions = {
+  macroDelimiter: "^", // The character(s) that denote the start of a macro
+  useGitHubStyleIds: false, // Whether to use GitHub style header ids
+  useHighlightJS: false, // Whether to use highlight.js for code blocks
+};
 ```
 
 ### Macro File Format
