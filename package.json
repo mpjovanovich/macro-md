@@ -28,7 +28,6 @@
   },
   "scripts": {
     "build": "rm dist/* && tsc --project tsconfig.json",
-    "start": "npm run build && node dist/index.js",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "quicktest": "node --loader ts-node/esm test/test.ts"
   },
