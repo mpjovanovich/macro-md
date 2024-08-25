@@ -122,6 +122,8 @@ Casing does matter.
 
 ### Nested Macros
 
+_Note: This feature works for simple scenarios, as in the below, but is quite buggy once nesting gets complex. It will require a major release to fix related issues._
+
 Macros may be nested, allowing for modular design:
 
 ```markdown

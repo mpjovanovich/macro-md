@@ -13,13 +13,6 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "ts-node": {
-    // "transpileOnly": true,
-    "files": true,
-    "compilerOptions": {
-      "rootDir": "./src"
-    }
-  },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }

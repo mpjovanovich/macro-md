@@ -139,7 +139,7 @@ export function embedTokens(
     const macroList = match[1];
     const placeHolderList: string[] = [];
 
-    // There may be one to many macro calls within the current match.
+    // There may be one too many macro calls within the current match.
     // The subRegex below will capture the names and arguments.
     const subRegex = /\s*(\w+)\s*(?:\(\s*(.*?)\s*\))?/g;
     let submatch = subRegex.exec(macroList);
@@ -307,70 +307,6 @@ export function getMacroContent(
 
   return { start: macroContentStart, end: macroContentEnd };
 }
-// export function getMacroContent_OLD(
-//   content: string,
-//   macroRegex: RegExp,
-//   match: RegExpExecArray
-// ): {
-//   start: number;
-//   end: number;
-// } {
-//   // We may have nested macros in the form: ^echo{I ^echo{was} echoed.}
-//   // This function will return the content of the outermost macro, ignoring all
-//   // nested macros.
-//   // If there are no macros it will return the original content.
-//   let macroContentStart = match.index + match[0].length;
-//   let macroContentEnd = -1;
-
-//   // Technically this is the first character after the opening brace
-//   let openBraceIndex = macroContentStart;
-//   let closeBraceIndex = content.indexOf("}", macroContentStart);
-//   let openMacros = 1;
-//   let macroContent = "";
-
-//   // Find the closing curly brace that belongs to this macro.
-//   while (openMacros > 0 && closeBraceIndex !== -1) {
-//     // Get substring up to the closing brace
-//     macroContent = content.substring(openBraceIndex, closeBraceIndex);
-
-//     // RegEx in JS have state, so we need to reset the index.
-//     // It will otherwise start looking from the last match.
-//     macroRegex.lastIndex = 0;
-
-//     // See if there is another macro in the substring that we extracted.
-//     let nextMacroMatch = macroRegex.exec(macroContent);
-//     if (nextMacroMatch && nextMacroMatch.index < closeBraceIndex) {
-//       // If we're in here then a macro tag was found before the closing brace,
-//       // so that curly brace is not the one we're looking for.
-//       openMacros++;
-//       openBraceIndex =
-//         macroContentStart + nextMacroMatch.index + nextMacroMatch[0].length;
-//     } else {
-//       // If we're in here then we found the closing brace that belongs to the
-//       // current macro.
-//       openMacros--;
-
-//       // Assume that this is the closing brace that we're looking for.
-//       macroContentEnd = closeBraceIndex;
-
-//       // Find the next closing brace
-//       closeBraceIndex = content.indexOf("}", closeBraceIndex + 1);
-//     }
-
-//     // Sanity check. Too many macros or something is broken.
-//     if (openMacros > 10) {
-//       throw new Error("Too many nested macros.");
-//     }
-//   }
-
-//   if (macroContentEnd === -1) {
-//     macroContent = content.substring(macroContentStart);
-//   } else {
-//     macroContent = content.substring(macroContentStart, macroContentEnd);
-//   }
-
-//   return { start: macroContentStart, end: macroContentEnd };
-// }
 
 /**
  * This function loads the user defined macros from the provided file path.

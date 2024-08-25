@@ -17,6 +17,15 @@ import { markedHighlight } from "marked-highlight";
 
 // This is a sandbox file for debugging. It is not part of the main project.
 
+// This is, unfortunately, getting too complex and buggy to maintain.
+// ... really this whole thing needs redone as a v3. I should have taken the approach of:
+
+// - use the macro name as the open and close, e.g.: MY_MACRO(asdf) markdown... MY_MACRO
+// - pull out all of the macro text
+// - parse markdown
+// - add macro text back in
+// - parse macros
+
 /*
  * Stub in markdown to test here
  */
