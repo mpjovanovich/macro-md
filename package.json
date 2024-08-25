@@ -29,7 +29,7 @@
   "scripts": {
     "build": "rm dist/* && tsc --project tsconfig.json",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "quicktest": "node --loader ts-node/esm test/test.ts"
+    "VS-quicktest": "TS_NODE_PROJECT=tsconfig.dev.json node --loader ts-node/esm test/test.ts"
   },
   "devDependencies": {
     "@types/highlightjs": "^9.12.6",

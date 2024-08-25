@@ -5,12 +5,15 @@ import {
   MacroFunction,
   escapeRegExp,
   embedTokens,
+  getMacroContent,
   loadMacros,
   parseMarkdown,
   processMacro,
   removeTokenWrappers,
 } from "../src/macroLoader";
 import { marked } from "marked";
+import { assert } from "console";
+import exp from "constants";
 
 /* **************************************************
  * CONSTANTS
@@ -32,6 +35,7 @@ const macroRegex = getMacroRegex();
 const testCases: {
   description: string;
   markdown: string;
+  macroContent?: string;
   embedded: string;
   parsedMarkdown: string;
   removedBlock: string;
@@ -42,6 +46,7 @@ const testCases: {
   {
     description: "basic markdown - no macros",
     markdown: "start end",
+    macroContent: undefined,
     embedded: "start end",
     parsedMarkdown: "<p>start end</p>\n",
     removedBlock: "<p>start end</p>\n",
@@ -51,6 +56,7 @@ const testCases: {
   {
     description: "inline macro, no content",
     markdown: "start ^testNoArgumentsNoContent{} end",
+    macroContent: "",
     embedded: `start ${GUID}_0  ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0  ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0  ${GUID}_0 end</p>\n`,
@@ -68,6 +74,7 @@ const testCases: {
   {
     description: "inline macro, content",
     markdown: "start ^testNoArguments{content} end",
+    macroContent: "content",
     embedded: `start ${GUID}_0 content ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
@@ -86,6 +93,7 @@ const testCases: {
     description:
       "inline macro, content with markdown syntax touching curly braces",
     markdown: "start ^testNoArguments{_content_} end",
+    macroContent: "_content_",
     embedded: `start ${GUID}_0 _content_ ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0 <em>content</em> ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 <em>content</em> ${GUID}_0 end</p>\n`,
@@ -103,6 +111,7 @@ const testCases: {
   {
     description: "inline macro, content, bumps against start but not end",
     markdown: "^testNoArguments{content} end",
+    macroContent: "content",
     embedded: `${GUID}_0 content ${GUID}_0 end`,
     parsedMarkdown: `<p>${GUID}_0 content ${GUID}_0 end</p>\n`,
     removedBlock: `<p>${GUID}_0 content ${GUID}_0 end</p>\n`,
@@ -120,6 +129,7 @@ const testCases: {
   {
     description: "inline macro, content, bumps against end but not start",
     markdown: "start ^testNoArguments{content}",
+    macroContent: "content",
     embedded: `start ${GUID}_0 content ${GUID}_0`,
     parsedMarkdown: `<p>start ${GUID}_0 content ${GUID}_0</p>\n`,
     removedBlock: `<p>start ${GUID}_0 content ${GUID}_0</p>\n`,
@@ -138,6 +148,7 @@ const testCases: {
     description: "nested inline macro",
     markdown:
       "outerstart ^testNoArguments{innerstart ^testNoArguments{content} innerend} outerend",
+    macroContent: "innerstart ^testNoArguments{content} innerend",
     embedded: `outerstart ${GUID}_0 innerstart ${GUID}_1 content ${GUID}_1 innerend ${GUID}_0 outerend`,
     parsedMarkdown: `<p>outerstart ${GUID}_0 innerstart ${GUID}_1 content ${GUID}_1 innerend ${GUID}_0 outerend</p>\n`,
     removedBlock: `<p>outerstart ${GUID}_0 innerstart ${GUID}_1 content ${GUID}_1 innerend ${GUID}_0 outerend</p>\n`,
@@ -163,6 +174,7 @@ const testCases: {
   {
     description: "multiple inline on same line",
     markdown: "start ^testNoArguments{first} ^testNoArguments{second} end",
+    macroContent: "first",
     embedded: `start ${GUID}_0 first ${GUID}_0 ${GUID}_1 second ${GUID}_1 end`,
     parsedMarkdown: `<p>start ${GUID}_0 first ${GUID}_0 ${GUID}_1 second ${GUID}_1 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 first ${GUID}_0 ${GUID}_1 second ${GUID}_1 end</p>\n`,
@@ -190,6 +202,7 @@ const testCases: {
   {
     description: "block macro wrapping single line of content",
     markdown: "^testNoArguments{content}",
+    macroContent: "content",
     embedded: `${GUID}_0\n\ncontent\n\n${GUID}_0\n`,
     parsedMarkdown: `<p>${GUID}_0</p>\n<p>content</p>\n<p>${GUID}_0</p>\n`,
     removedBlock: `${GUID}_0\n<p>content</p>\n${GUID}_0\n`,
@@ -207,6 +220,7 @@ const testCases: {
   {
     description: "two subsequent block macros, each on own line",
     markdown: `^testNoArguments{first}\n^testNoArguments{second}`,
+    macroContent: "first",
     embedded: `${GUID}_0\n\nfirst\n\n${GUID}_0\n\n${GUID}_1\n\nsecond\n\n${GUID}_1\n`,
     parsedMarkdown: `<p>${GUID}_0</p>\n<p>first</p>\n<p>${GUID}_0</p>\n<p>${GUID}_1</p>\n<p>second</p>\n<p>${GUID}_1</p>\n`,
     removedBlock: `${GUID}_0\n<p>first</p>\n${GUID}_0\n${GUID}_1\n<p>second</p>\n${GUID}_1\n`,
@@ -231,6 +245,7 @@ const testCases: {
   {
     description: "macro wrapping multiple lines of content",
     markdown: `^testNoArguments{\ncontent\n}`,
+    macroContent: "\ncontent\n",
     embedded: `${GUID}_0\n\n\ncontent\n\n\n${GUID}_0\n`,
     parsedMarkdown: `<p>${GUID}_0</p>\n<p>content</p>\n<p>${GUID}_0</p>\n`,
     removedBlock: `${GUID}_0\n<p>content</p>\n${GUID}_0\n`,
@@ -250,6 +265,7 @@ const testCases: {
   {
     description: "inline macro, single argument, no spacing",
     markdown: "start ^testWithArgument(arg1){content} end",
+    macroContent: "content",
     embedded: `start ${GUID}_0 content ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
@@ -267,6 +283,7 @@ const testCases: {
   {
     description: "inline macro, single argument, spacing",
     markdown: "start ^testWithArgument (arg1 ) {content} end",
+    macroContent: "content",
     embedded: `start ${GUID}_0 content ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 content ${GUID}_0 end</p>\n`,
@@ -286,6 +303,7 @@ const testCases: {
   {
     description: "multiple macros - inline",
     markdown: "start ^testNoArguments testWithArgument(arg1){content} end",
+    macroContent: "content",
     embedded: `start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end`,
     parsedMarkdown: `<p>start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end</p>\n`,
     removedBlock: `<p>start ${GUID}_0 ${GUID}_1 content ${GUID}_1 ${GUID}_0 end</p>\n`,
@@ -310,6 +328,7 @@ const testCases: {
   {
     description: "multiple macros - block",
     markdown: "^testNoArguments testWithArgument(arg1){content}",
+    macroContent: "content",
     embedded: `${GUID}_0\n\n${GUID}_1\n\ncontent\n\n${GUID}_1\n\n${GUID}_0\n`,
     parsedMarkdown: `<p>${GUID}_0</p>\n<p>${GUID}_1</p>\n<p>content</p>\n<p>${GUID}_1</p>\n<p>${GUID}_0</p>\n`,
     removedBlock: `${GUID}_0\n${GUID}_1\n<p>content</p>\n${GUID}_1\n${GUID}_0\n`,
@@ -408,6 +427,22 @@ describe("loadMacros", () => {
     const macros = await loadMacros(testMacroFile, mockDynamicImport);
     expect(macros.has("testNoArgumentsNoContent")).toBeTruthy();
     expect(typeof macros.get("testNoArgumentsNoContent")).toBe("function");
+  });
+});
+
+describe("getMacroContent", () => {
+  testCases.forEach(({ description, markdown, macroContent }) => {
+    if (macroContent === undefined) return;
+
+    it(description, () => {
+      let match = macroRegex.exec(markdown);
+      if (!match) throw new Error("No match found in markdown.");
+
+      // Start will be the first character after the macro identifier,
+      // end will be the closing curly brace.
+      const { start, end } = getMacroContent(markdown, macroRegex, match);
+      expect(markdown.substring(start, end)).toBe(macroContent);
+    });
   });
 });
 

@@ -1,47 +1,74 @@
-```python
-@requires_authorization
-def somefunc(param1='', param2=0):
-    r'''A docstring'''
-    if param1 > param2: # interesting
-        print 'Gre\'ater'
-    return (param2 - param1 + 1) or None
+<p class="demo">Demo:</p>
 
-class SomeClass:
-    pass
-```
+Logic.ly
 
-```typescript
-function initHighlight(block, flags): void {
-  try {
-    const someVar: number = 0;
+~~fig{images/basic_logic_gates.png}
 
-    if (block.className.search(/\bno\-highlight\b/) != -1)
-      return processBlock(block, true, 0x0f) + ' class=""';
-  } catch (e) {
-    /* handle exception */
-  }
-  for (var i = 0 / 2; i < classes.length; i++) {
-    // "0 / 2" should not be parsed as regexp
-    if (checkCondition(classes[i]) === undefined) return /\d+/g;
-  }
+## Circuits
+
+We can combine logic gates to create **circuits**.
+
+These circuits can do things like:
+
+- Arithmetic (addition, subtraction, etc.)
+- Comparison (greater than, less than, equal)
+- Memory storage
+- ...
+
+### Comparing Values
+
+A **magnitude comparator** is a type of combinational circuit that compares two numbers.
+
+~~exercise{
+
+#### One bit magnitude comparator:
+
+~~fig{images/one_bit_magnitude_comparator.png}
+
+[One Bit Magnitude Comparator - Logicly](https://github.com/mpjovanovich/ivy_tech/blob/main/SDEV120_Computing_Logic/one_bit_magnitude_comparer.logicly)
+
+**Problem 1:**
+
+Assume that A = 1, B = 1.
+
+For each output:
+
+a) Translate the circuit into a boolean expression.
+b) Plug the above values into the circuit and solve.
+
+_Hint:_ Remember your truth tables and the fact that 1 = true and 0 = false.
+
+~~summary( Output: A < B ) {
+
+**a)**
+
+- ¬A ∧ B
+
+**b)**
+
+- 0 ∧ 1 = False
+
 }
-```
 
-```csharp
-namespace MyApplication
-{
-    /*
-     * This is a test class.
-     */
-    class SomeClass : IInterface
-    {
-        int x = 0;
-        var list = new List<int>();
+~~summary( Output: A > B ) {
 
-        public void DoSomething()
-        {
-            x++;
-        }
-    }
+- A ∧ ¬B
+- 1 ∧ 0 = False
+
 }
-```
+
+~~summary( Output: A = B ) {
+
+- ¬( (¬A ∧ B) ∨ (A ∧ ¬B) )
+- A ∨ ¬B ∧ ¬A ∨ B
+- A ∨ (¬B ∧ ¬A) ∨ B
+- 1 ∨ (0 ∧ 0) ∨ 1
+- 1 ∨ 0 ∨ 1 = True
+
+}
+
+**Problem 2:**
+
+What is the boolean expression for the output of the circuit?
+
+}
