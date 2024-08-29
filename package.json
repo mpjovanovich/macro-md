@@ -4,7 +4,7 @@
   "author": "Michael Jovanovich",
   "license": "MIT",
   "type": "module",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://github.com/mpjovanovich/macro-md#readme",
@@ -27,7 +27,7 @@
     "url": "https://github.com/mpjovanovich/macro-md/issues"
   },
   "scripts": {
-    "build": "rm dist/* && tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.json",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "VS-quicktest": "TS_NODE_PROJECT=tsconfig.dev.json node --loader ts-node/esm test/test.ts"
   },
