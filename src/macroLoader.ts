@@ -365,7 +365,11 @@ export async function parseMarkdown(
     // Override the heading render method to include GitHub style IDs
     const renderer = new marked.Renderer();
     renderer.heading = function ({ text, depth }) {
-      const escapedText = text.toLowerCase().replace(/[^\w]+/g, "-");
+      const escapedText = text
+        .toLowerCase()
+        .replace(/[^\w]+/g, "-") // Replace non-word characters with hyphens
+        .replace(/^-+|-+$/g, ""); // Remove leading and trailing hyphens
+
       return `<h${depth} id="${escapedText}">${text}</h${depth}>\n`;
     };
     marked.setOptions({ renderer: renderer });

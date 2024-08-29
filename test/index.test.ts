@@ -540,6 +540,14 @@ describe("MacroMDOptions", () => {
       let result = await parseMarkdown(markdown, true, false);
       expect(result).toBe(expected);
     });
+
+    it("should remove open and close hyphens when using GitHub style IDs", async () => {
+      const markdown = "# Conjunction (AND)";
+      const result = await parseMarkdown(markdown, true, false);
+      expect(result).toContain(
+        '<h1 id="conjunction-and">Conjunction (AND)</h1>'
+      );
+    });
   });
 });
 
